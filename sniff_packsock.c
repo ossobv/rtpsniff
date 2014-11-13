@@ -99,8 +99,9 @@ struct sniff_rtp {
 #define PT_ULAW 0
 #define PT_ALAW 8
 
-static struct rtpstat_t **sniff__memory[2]; /* two locations to store counts in */
-static struct rtpstat_t **sniff__memp;	    /* the "current" memory location */
+//static struct rtpstat_t **sniff__memory[2]; /* two locations to store counts in */
+//static struct rtpstat_t **sniff__memp;	    /* the "current" memory location */
+static struct memory_t *sniff__memory;
 static volatile int sniff__done;    /* whether we're done */
 
 
@@ -166,7 +167,7 @@ int sniff_create_socket(char const *iface) {
     return raw_socket;
 }
 
-void sniff_loop(int packet_socket, struct rtpstat_t **memory1, struct rtpstat_t **memory2) {
+void sniff_loop(int packet_socket, struct memory_t *memory) {
 #define SNIFF_SIZE (sizeof(struct sniff_ether) + sizeof(struct sniff_ip) + \
 		    sizeof(struct sniff_udp) + sizeof(struct sniff_rtp))
     ssize_t ret;
@@ -178,9 +179,10 @@ void sniff_loop(int packet_socket, struct rtpstat_t **memory1, struct rtpstat_t 
     struct sniff_ip *ipq = (struct sniff_ip*)(datagram + 18);
 
     /* Set memory and other globals */
-    sniff__memory[0] = memory1;
-    sniff__memory[1] = memory2;
-    sniff__memp = sniff__memory[0];
+    sniff__memory = memory;
+//    sniff__memory[0] = memory1;
+//    sniff__memory[1] = memory2;
+//  sniff__memp = sniff__memory[0];
     sniff__done = 0;
 
     /* Add signal handlers */
@@ -195,7 +197,8 @@ void sniff_loop(int packet_socket, struct rtpstat_t **memory1, struct rtpstat_t 
      * want to view other peoples packets. */
 
 #ifndef NDEBUG
-    fprintf(stderr, "sniff_loop: Starting loop (mem %p/%p).\n", sniff__memory[0], sniff__memory[1]);
+    fprintf(stderr, "sniff_loop: Starting loop (mem %p/%p/%i).\n",
+	    memory->rtphash[0], memory->rtphash[1], memory->active);
 #endif
 
     do {
@@ -250,7 +253,8 @@ void sniff_loop(int packet_socket, struct rtpstat_t **memory1, struct rtpstat_t 
 		    continue;
 
 		{
-		    struct rtpstat_t *curmem = *sniff__memp;
+		    int recently_active = memory->active;
+		    struct rtpstat_t *curmem = memory->rtphash[recently_active];
 		    uint16_t seq = ntohs(rtp->seq);
 		    struct rtpstat_t find = {
 			.src_ip = ntohl(l_ip->src),
@@ -297,7 +301,8 @@ void sniff_loop(int packet_socket, struct rtpstat_t **memory1, struct rtpstat_t 
 			old->seq = seq;
 		    }
 
-		    *sniff__memp = curmem;
+		    /* HASH_ADD may have mutated the pointer. */
+		    memory->rtphash[memory->active] = curmem;
 		}
 	    }
 	}
@@ -321,13 +326,12 @@ void sniff_loop(int packet_socket, struct rtpstat_t **memory1, struct rtpstat_t 
 }
 
 static void sniff__switch_memory(int signum) {
-    if (sniff__memp == sniff__memory[0])
-	sniff__memp = sniff__memory[1];
-    else
-	sniff__memp = sniff__memory[0];
+    int recently_active = sniff__memory->active;
+    sniff__memory->active = !recently_active;
 #ifndef NDEBUG
-    fprintf(stderr, "sniff__switch_memory: Using memory %p (%p).\n",
-	    sniff__memp, *sniff__memp);
+    fprintf(stderr, "sniff__switch_memory: Switched from memory %d (%p) to %d (%p).\n",
+	    recently_active, sniff__memory->rtphash[recently_active],
+	    !recently_active, sniff__memory->rtphash[!recently_active]);
 #endif
 }
 

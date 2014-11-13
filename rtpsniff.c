@@ -26,7 +26,11 @@ with RTPSniff.  If not, see <http://www.gnu.org/licenses/>.
 
 int main(int argc, char const *const *argv) {
     int socket = -1;
-    struct rtpstat_t *memory[2] = {NULL, NULL};
+    struct memory_t memory = {
+	.rtphash = {NULL, NULL},
+	.active = 0,
+	.request_switch = 0,
+    };
 
     /* User wants help? */
     if (argc == 2 && argv[1][0] == '-' && argv[1][1] == 'h' && argv[1][2] == '\0') {
@@ -47,17 +51,17 @@ int main(int argc, char const *const *argv) {
     }
 
     /* Initialize updater thread */
-    timer_loop_bg(&memory[0], &memory[1]);
+    timer_loop_bg(&memory);
 
     /* Start the main loop (ends on INT/HUP/TERM/QUIT or error) */
-    sniff_loop(socket, &memory[0], &memory[1]);
+    sniff_loop(socket, &memory);
 
     /* Finish updater thread */
     timer_loop_stop();
 
     /* Finish/close open stuff */
-    storage_memfree(&memory[0]);
-    storage_memfree(&memory[1]);
+    storage_memfree(&memory.rtphash[0]);
+    storage_memfree(&memory.rtphash[1]);
 	
     storage_close();
     close(socket);

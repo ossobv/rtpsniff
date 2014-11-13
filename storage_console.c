@@ -60,7 +60,7 @@ void storage_write(uint32_t unixtime_begin, uint32_t interval, struct rtpstat_t 
 	lost += old->misssize;
 	late += old->late;
 
-	/* Streams with significant packets */
+	/* Streams with significant amounts of packets */
 	if (packets < 20)
 	    continue;
 	/* Streams with issues */

@@ -18,6 +18,7 @@ with RTPSniff.  If not, see <http://www.gnu.org/licenses/>.
 ======================================================================*/
 
 #include "rtpsniff.h"
+#include <assert.h>
 #include <sys/time.h>
 #include <pthread.h>
 #include <signal.h>
@@ -42,8 +43,7 @@ with RTPSniff.  If not, see <http://www.gnu.org/licenses/>.
 
 
 static pthread_t timer__thread;
-static struct rtpstat_t **timer__memory[2]; /* memory to store in non-volatile space */
-static struct rtpstat_t **timer__memp;	    /* memory that's currently written to */
+static struct memory_t *timer__memory;
 #if TIMER__METHOD == TIMER__METHOD_NSLEEP
 static volatile int timer__done;	/* whether we're done */
 #elif TIMER__METHOD == TIMER__METHOD_SEMAPHORE
@@ -81,13 +81,11 @@ void timer_help() {
     );
 }
 
-int timer_loop_bg(struct rtpstat_t **memory1, struct rtpstat_t **memory2) {
+int timer_loop_bg(struct memory_t *memory) {
     pthread_attr_t attr;
     
     /* Set internal config */
-    timer__memory[0] = memory1;
-    timer__memory[1] = memory2;
-    timer__memp = timer__memory[0]; /* sniff_loop writes to memory1 first */
+    timer__memory = memory;
 
 #if TIMER__METHOD == TIMER__METHOD_NSLEEP
     /* Initialize polling variable */
@@ -158,6 +156,7 @@ static void *timer__run(void *thread_arg) {
 	struct timespec new_time;
 	int ret;
 #endif /* TIMER__METHOD == TIMER__METHOD_SEMAPHORE */	
+	int previously_active;
 
 	/* Get current time */
 	if (gettimeofday(&current_time, NULL) != 0) {
@@ -224,23 +223,22 @@ static void *timer__run(void *thread_arg) {
 #endif
 
 	/* Poke other thread to switch memory */
+	previously_active = timer__memory->active;
 	raise(SIGUSR1);
 	sleep(1); /* wait a second to let other thread finish switching memory */
 
+	assert(previously_active != timer__memory->active);
+
 	if (first_run_skipped) {
 	    /* Delegate the actual writing to storage. */
-	    storage_write(sample_begin_time, INTERVAL_SECONDS, *timer__memp);
+	    storage_write(sample_begin_time, INTERVAL_SECONDS, timer__memory->rtphash[previously_active]);
 	} else {
 	    /* On first run, we started too late in the interval. Ignore those counts. */
 	    first_run_skipped = 1;
 	}
 
 	/* Reset mem for next run */
-	storage_memfree(timer__memp);
-	if (timer__memp == timer__memory[0])
-	    timer__memp = timer__memory[1];
-	else
-	    timer__memp = timer__memory[0];
+	storage_memfree(&timer__memory->rtphash[previously_active]);
     }
     
 #ifndef NDEBUG
