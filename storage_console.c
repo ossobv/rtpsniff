@@ -44,6 +44,10 @@ void storage_close() {
 void storage_write(uint32_t unixtime_begin, uint32_t interval, struct rtpstat_t *memory) {
     char src_ip[16];
     char dst_ip[16];
+    unsigned streams = 0;
+    unsigned packets = 0;
+    unsigned lost = 0;
+    unsigned late = 0;
 
     struct rtpstat_t *old, *tmp;
 
@@ -51,14 +55,28 @@ void storage_write(uint32_t unixtime_begin, uint32_t interval, struct rtpstat_t 
 	    unixtime_begin, interval, memory);
 
     HASH_ITER(hh, memory, old, tmp) {
+	streams += 1;
+	packets += old->packets;
+	lost += old->misssize;
+	late += old->late;
+
+	/* Streams with significant packets */
+	if (packets < 20)
+	    continue;
+	/* Streams with issues */
+	if (old->missed == 0 && old->late == 0 && old->jumps == 0)
+	    continue;
+	/* Packets lost minimum 5% */
+	if (old->misssize * 100 / old->packets < 5)
+	    continue;
+
 	sprintf(src_ip, "%hhu.%hhu.%hhu.%hhu",
-	        old->src_ip >> 24, (old->src_ip >> 16) & 0xff,
-	        (old->src_ip >> 8) & 0xff, old->src_ip & 0xff);
+		old->src_ip >> 24, (old->src_ip >> 16) & 0xff,
+		(old->src_ip >> 8) & 0xff, old->src_ip & 0xff);
 	sprintf(dst_ip, "%hhu.%hhu.%hhu.%hhu",
-	        old->dst_ip >> 24, (old->dst_ip >> 16) & 0xff,
-	        (old->dst_ip >> 8) & 0xff, old->dst_ip & 0xff);
-	fprintf(stderr,
-		"RTP: %s:%hu > %s:%hu"
+		old->dst_ip >> 24, (old->dst_ip >> 16) & 0xff,
+		(old->dst_ip >> 8) & 0xff, old->dst_ip & 0xff);
+	printf("RTP: %s:%hu > %s:%hu"
 		", ssrc: %" PRIu32
 		", packets: %" PRIu32
 		", seq: %" PRIu16
@@ -76,6 +94,14 @@ void storage_write(uint32_t unixtime_begin, uint32_t interval, struct rtpstat_t 
 		old->misssize,
 		old->late,
 		old->jumps);
+    }
+
+    if (!packets) {
+	printf("RTP-SUM: nothing\n");
+    } else {
+	printf("RTP-SUM: streams %u, packets %u, lost %u (%.2f%%), late %u (%.2f%%)\n",
+	       streams, packets, lost, 100.0 * lost / packets,
+	       late, 100.0 * late / packets);
     }
 }
 
