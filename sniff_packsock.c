@@ -302,7 +302,7 @@ void sniff_loop(int packet_socket, struct memory_t *memory) {
 		    }
 
 		    /* HASH_ADD may have mutated the pointer. */
-		    memory->rtphash[memory->active] = curmem;
+		    memory->rtphash[recently_active] = curmem;
 		}
 	    }
 	}
