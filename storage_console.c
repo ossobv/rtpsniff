@@ -103,6 +103,7 @@ void storage_write(uint32_t unixtime_begin, uint32_t interval, struct rtpstat_t 
 	       streams, packets, lost, 100.0 * lost / packets,
 	       late, 100.0 * late / packets);
     }
+    fflush(stdout);
 }
 
 void storage_memfree(struct rtpstat_t **memory) {
