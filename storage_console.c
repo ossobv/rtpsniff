@@ -49,33 +49,33 @@ void storage_write(uint32_t unixtime_begin, uint32_t interval, struct rtpstat_t 
     unsigned lost = 0;
     unsigned late = 0;
 
-    struct rtpstat_t *old, *tmp;
+    struct rtpstat_t *rtpstat, *tmp;
 
     printf("Storage output: unixtime_begin=%" SCNu32 ", interval=%" SCNu32 ", memory=%p\n",
 	    unixtime_begin, interval, memory);
 
-    HASH_ITER(hh, memory, old, tmp) {
+    HASH_ITER(hh, memory, rtpstat, tmp) {
 	streams += 1;
-	packets += old->packets;
-	lost += old->misssize;
-	late += old->late;
+	packets += rtpstat->packets;
+	lost += rtpstat->misssize;
+	late += rtpstat->late;
 
 	/* Streams with significant amounts of packets */
-	if (packets < 20)
+	if (rtpstat->packets < 20)
 	    continue;
 	/* Streams with issues */
-	if (old->missed == 0 && old->late == 0 && old->jumps == 0)
+	if (rtpstat->missed == 0 && rtpstat->late == 0 && rtpstat->jumps == 0)
 	    continue;
 	/* Packets lost minimum 5% */
-	if (old->misssize * 100 / old->packets < 5)
+	if (rtpstat->misssize * 100 / rtpstat->packets < 5)
 	    continue;
 
 	sprintf(src_ip, "%hhu.%hhu.%hhu.%hhu",
-		old->src_ip >> 24, (old->src_ip >> 16) & 0xff,
-		(old->src_ip >> 8) & 0xff, old->src_ip & 0xff);
+		rtpstat->src_ip >> 24, (rtpstat->src_ip >> 16) & 0xff,
+		(rtpstat->src_ip >> 8) & 0xff, rtpstat->src_ip & 0xff);
 	sprintf(dst_ip, "%hhu.%hhu.%hhu.%hhu",
-		old->dst_ip >> 24, (old->dst_ip >> 16) & 0xff,
-		(old->dst_ip >> 8) & 0xff, old->dst_ip & 0xff);
+		rtpstat->dst_ip >> 24, (rtpstat->dst_ip >> 16) & 0xff,
+		(rtpstat->dst_ip >> 8) & 0xff, rtpstat->dst_ip & 0xff);
 	printf("RTP: %s:%hu > %s:%hu"
 		", ssrc: %" PRIu32
 		", packets: %" PRIu32
@@ -85,15 +85,15 @@ void storage_write(uint32_t unixtime_begin, uint32_t interval, struct rtpstat_t 
 		", late: %" PRIu16
 		", jump: %" PRIu16
 		"\n",
-		src_ip, old->src_port,
-		dst_ip, old->dst_port,
-		old->ssrc,
-		old->packets,
-		old->seq,
-		old->missed,
-		old->misssize,
-		old->late,
-		old->jumps);
+		src_ip, rtpstat->src_port,
+		dst_ip, rtpstat->dst_port,
+		rtpstat->ssrc,
+		rtpstat->packets,
+		rtpstat->seq,
+		rtpstat->missed,
+		rtpstat->misssize,
+		rtpstat->late,
+		rtpstat->jumps);
     }
 
     if (!packets) {
@@ -107,9 +107,9 @@ void storage_write(uint32_t unixtime_begin, uint32_t interval, struct rtpstat_t 
 
 void storage_memfree(struct rtpstat_t **memory) {
     /* FIXME: move me to sniff_pcap? */
-    struct rtpstat_t *old, *tmp;
-    HASH_ITER(hh, *memory, old, tmp) {
-	HASH_DEL(*memory, old);
-	free(old);
+    struct rtpstat_t *rtpstat, *tmp;
+    HASH_ITER(hh, *memory, rtpstat, tmp) {
+	HASH_DEL(*memory, rtpstat);
+	free(rtpstat);
     }
 }
