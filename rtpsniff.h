@@ -93,6 +93,7 @@ void rtpsniff_help(); /* show help */
  | Calls: (nothing.. manually adds to the memory)                             |
  *----------------------------------------------------------------------------*/
 void sniff_help(); /* show info */
+int sniff_snaplen();
 void sniff_loop(pcap_t *handle, struct memory_t *memory);
 
 

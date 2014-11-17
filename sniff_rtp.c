@@ -227,10 +227,17 @@ static void sniff_got_packet(u_char *args, const struct pcap_pkthdr *header,
 	sniff__memory->rtphash[recently_active] = curmem;
     }
 }
-    
 
+int sniff_snaplen() {
+    return (sizeof(struct sniff_ether) +
+	    sizeof(struct sniff_ip) +
+	    sizeof(struct sniff_udp) +
+	    sizeof(struct sniff_rtp));
+}
 
 void sniff_loop(pcap_t *handle, struct memory_t *memory) {
+    struct pcap_stat stat = {0,};
+
     /* Set memory and other globals */
     sniff__handle = handle;
     sniff__memory = memory;
@@ -253,6 +260,16 @@ void sniff_loop(pcap_t *handle, struct memory_t *memory) {
 #ifndef NDEBUG
     fprintf(stderr, "sniff_loop: Ended loop at user/system request.\n");
 #endif
+
+    if (pcap_stats(handle, &stat) < 0) {
+            fprintf(stderr, "pcap_stats: %s\n", pcap_geterr(handle));
+            return;
+    }
+
+    //fprintf(stderr, "%u packets captured\n", packets_captured);
+    fprintf(stderr, "%u packets received by filter\n", stat.ps_recv);
+    fprintf(stderr, "%u packets dropped by kernel\n", stat.ps_drop);
+    fprintf(stderr, "%u packets dropped by interface\n", stat.ps_ifdrop);
 
     /* Remove signal handlers */
     util_signal_set(SIGUSR1, SIG_IGN);

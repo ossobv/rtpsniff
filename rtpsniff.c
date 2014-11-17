@@ -27,9 +27,8 @@ with RTPSniff.  If not, see <http://www.gnu.org/licenses/>.
 int main(int argc, char const *const *argv) {
     char errbuf[PCAP_ERRBUF_SIZE];
     struct bpf_program fp;
-    bpf_u_int32 mask;
-    bpf_u_int32 net;
     pcap_t *handle = NULL;
+    int bufsize;
 
     struct memory_t memory = {
 	.rtphash = {NULL, NULL},
@@ -49,10 +48,19 @@ int main(int argc, char const *const *argv) {
     /* Try initialization */
     errbuf[0] = '\0';
     strncat(errbuf, "Not enough arguments", PCAP_ERRBUF_SIZE - 1);
-    if (argc != 3 ||
-	    (pcap_lookupnet(argv[1], &net, &mask, errbuf) == -1) ||
-	    ((handle = pcap_open_live(argv[1], BUFSIZ, 1, 1000, errbuf)) == NULL) ||
-	    (pcap_compile(handle, &fp, argv[2], 0, net) == -1) ||
+    if (argc != 4 ||
+	    ((handle = pcap_create(argv[1], errbuf)) == NULL) ||
+	    (pcap_set_snaplen(handle, sniff_snaplen()) != 0) ||
+	    (pcap_set_timeout(handle, 1000) != 0) ||
+	    /* frame size is 128 for our snaplen,
+	     * we need to hold MAX_KPPS*1000*128 bytes if we poll and flush
+	     * every second. add a little extra for kicks.
+	     * If you set this too low, the "packets dropped by kernel" total
+	     * will increase dramatically. Note that that figure will always
+	     * show some packets because of startup/shutdown misses. */
+	    (pcap_set_buffer_size(handle, (bufsize = atoi(argv[2]) * 1024 * 192)) != 0) ||
+	    (pcap_activate(handle) != 0) ||
+	    (pcap_compile(handle, &fp, argv[3], 0, PCAP_NETMASK_UNKNOWN) == -1) ||
 	    (pcap_setfilter(handle, &fp) == -1)) {
 	fprintf(stderr, "rtpsniff: Initialization failed or bad command line "
 		        "options. See -h for help:\n%s\n", errbuf);
@@ -60,6 +68,12 @@ int main(int argc, char const *const *argv) {
 	    pcap_close(handle);
 	return 0;
     }
+
+#ifndef NDEBUG
+    fprintf(stderr, "rtpsniff: Initialized a packet ring buffer of %d KB, "
+		    "should safely handle more than %d thousand packets per second.\n",
+	    bufsize / 1024, atoi(argv[2]));
+#endif
 
     /* Initialize updater thread */
     timer_loop_bg(&memory);
@@ -81,10 +95,12 @@ int main(int argc, char const *const *argv) {
 
 void rtpsniff_help() {
     printf(
-	"Usage: rtpsniff IFACE UNUSED_CONFIGFILE\n"
-	"Captures IP traffic on the specified interface and stores the average packet\n"
-	"and length counts.\n"
+	"Usage: rtpsniff IFACE MAX_KPPS PCAP_FILTER\n"
+	"  MAX_KPPS is the amount of Kpackets per second you expect. if you\n"
+	"    go too low, the buffers won't be sufficient.\n"
+	"  IFACE is the interface to sniff on.\n"
+	"  PCAP_FILTER is the common BPF filter.\n"
+	"Example: rtpsniff 100 eth0 'udp and not port 53'\n"
 	"\n"
     );
 }
-
