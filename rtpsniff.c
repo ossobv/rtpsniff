@@ -25,7 +25,12 @@ with RTPSniff.  If not, see <http://www.gnu.org/licenses/>.
 
 
 int main(int argc, char const *const *argv) {
-    int socket = -1;
+    char errbuf[PCAP_ERRBUF_SIZE];
+    struct bpf_program fp;
+    bpf_u_int32 mask;
+    bpf_u_int32 net;
+    pcap_t *handle = NULL;
+
     struct memory_t memory = {
 	.rtphash = {NULL, NULL},
 	.active = 0,
@@ -36,17 +41,23 @@ int main(int argc, char const *const *argv) {
     if (argc == 2 && argv[1][0] == '-' && argv[1][1] == 'h' && argv[1][2] == '\0') {
 	rtpsniff_help();
 	sniff_help();
-	//memory_help();
 	timer_help();
 	storage_help();
 	return 0;
     }
 
     /* Try initialization */
-    if (argc != 3 || (socket = sniff_create_socket(argv[1])) < 0 || storage_open(argv[2]) != 0) {
-	if (socket >= 0)
-	    close(socket);
-	fprintf(stderr, "rtpsniff: Initialization failed or bad command line options. See -h for help.\n");
+    errbuf[0] = '\0';
+    strncat(errbuf, "Not enough arguments", PCAP_ERRBUF_SIZE - 1);
+    if (argc != 3 ||
+	    (pcap_lookupnet(argv[1], &net, &mask, errbuf) == -1) ||
+	    ((handle = pcap_open_live(argv[1], BUFSIZ, 1, 1000, errbuf)) == NULL) ||
+	    (pcap_compile(handle, &fp, argv[2], 0, net) == -1) ||
+	    (pcap_setfilter(handle, &fp) == -1)) {
+	fprintf(stderr, "rtpsniff: Initialization failed or bad command line "
+		        "options. See -h for help:\n%s\n", errbuf);
+	if (handle)
+	    pcap_close(handle);
 	return 0;
     }
 
@@ -54,7 +65,7 @@ int main(int argc, char const *const *argv) {
     timer_loop_bg(&memory);
 
     /* Start the main loop (ends on INT/HUP/TERM/QUIT or error) */
-    sniff_loop(socket, &memory);
+    sniff_loop(handle, &memory);
 
     /* Finish updater thread */
     timer_loop_stop();
@@ -64,7 +75,7 @@ int main(int argc, char const *const *argv) {
     storage_memfree(&memory.rtphash[1]);
 	
     storage_close();
-    close(socket);
+    pcap_close(handle);
     return 0;
 }
 

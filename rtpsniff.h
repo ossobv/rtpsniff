@@ -19,8 +19,10 @@ You should have received a copy of the GNU General Public License along
 with RTPSniff.  If not, see <http://www.gnu.org/licenses/>.
 ======================================================================*/
 #include "uthash.h"
-#include <sys/types.h>
 #include <inttypes.h>
+#include <pcap.h>
+#include <sys/types.h>
+
 
 /*----------------------------------------------------------------------------*
  | Program: rtpsniff                                                          |
@@ -91,10 +93,7 @@ void rtpsniff_help(); /* show help */
  | Calls: (nothing.. manually adds to the memory)                             |
  *----------------------------------------------------------------------------*/
 void sniff_help(); /* show info */
-int sniff_create_socket(char const *iface); /* create a packet socket */
-void sniff_close_socket(int packet_socket); /* close the packet socket */
-void sniff_loop(int packet_socket, struct memory_t *memory);
-
+void sniff_loop(pcap_t *handle, struct memory_t *memory);
 
 
 /*----------------------------------------------------------------------------*

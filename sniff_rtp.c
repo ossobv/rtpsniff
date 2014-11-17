@@ -102,7 +102,7 @@ struct sniff_rtp {
 //static struct rtpstat_t **sniff__memory[2]; /* two locations to store counts in */
 //static struct rtpstat_t **sniff__memp;	    /* the "current" memory location */
 static struct memory_t *sniff__memory;
-static volatile int sniff__done;    /* whether we're done */
+static pcap_t *sniff__handle;
 
 
 static void sniff__switch_memory(int signum);
@@ -140,50 +140,100 @@ void sniff_help() {
     );
 }
 
-int sniff_create_socket(char const *iface) {
-    /* We could use ETH_P_IP here instead of ETH_P_ALL but we'd miss out on
-     * (1) locally generated packets and (2) 802.1q packets. */
-    int raw_socket = socket(PF_PACKET, SOCK_RAW, ETH_P_ALL);
-    if (raw_socket >= 0) {
-	if (strcmp(iface, "any") != 0) {
-	    int ifindex = if_nametoindex(iface);
-	    if (ifindex != 0) {
-		struct sockaddr_ll saddr_ll;
-		saddr_ll.sll_family = AF_PACKET;
-		saddr_ll.sll_protocol = ETH_P_ALL;
-		saddr_ll.sll_ifindex = if_nametoindex(iface);
-		if (bind(raw_socket, (struct sockaddr*)&saddr_ll, sizeof(struct sockaddr_ll)) != 0)
-		    perror("bind");
-	    } else {
-		fprintf(stderr, "if_nametoindex: No such interface found, perhaps you want 'any' (all)?\n");
-		close(raw_socket);
-		return -1;
-	    }
-	}
+static void sniff_got_packet(u_char *args, const struct pcap_pkthdr *header,
+		        const u_char *packet) {
+    struct sniff_ether *ether = (struct sniff_ether*)packet;
+    struct sniff_ip *ip;
+    struct sniff_udp *udp;
+    uint16_t sport;
+    uint16_t dport;
+    struct sniff_rtp *rtp;
+    
+    if (ether->type == ETH_P_IP) {
+	ip = (struct sniff_ip*)(packet + 14);
+    } else if (ether->type == ETH_P_8021Q && ether->type2 == ETH_P_IP) {
+	ip = (struct sniff_ip*)(packet + 18);
     } else {
-	perror("socket");
-	fprintf(stderr, "socket: Are you root? You need CAP_NET_RAW powers.\n");
+	/* Skip. */
+	return;
     }
-    return raw_socket;
+
+    if (ip->proto != PROTO_UDP) {
+	return;
+    }
+
+    udp = (struct sniff_udp*)(ip + 1);
+    sport = htons(udp->sport);
+    dport = htons(udp->dport);
+    rtp = (struct sniff_rtp*)(udp + 1);
+	
+    if (ntohs(udp->len) < sizeof(struct sniff_rtp)) {
+	return;
+    }
+    if (rtp->ver != 2) {
+	return;
+    }
+
+    {
+	int recently_active = sniff__memory->active;
+	struct rtpstat_t *curmem = sniff__memory->rtphash[recently_active];
+	uint16_t seq = ntohs(rtp->seq);
+	struct rtpstat_t find = {
+	    .src_ip = ntohl(ip->src),
+	    .dst_ip = ntohl(ip->dst),
+	    .src_port = sport,
+	    .dst_port = dport,
+	    /* ignore: tlen, vlan */
+	    .ssrc = ntohl(rtp->ssrc),
+	    /* the rest: zero */
+	};
+	struct rtpstat_t *old;
+
+#if 0
+	fprintf(stderr, "len: %hhu, %hhu, %hhu, %hhu, %hhu, %hhu\n",
+		rtp->ver, rtp->p, rtp->x, rtp->cc, rtp->m, rtp->pt);
+#endif
+
+	HASH_FIND(hh, curmem, &find.HASH_FIRST, HASH_SIZE(find), old);
+	if (!old) {
+	    struct rtpstat_t *rtpstat = malloc(sizeof(*rtpstat));
+	    if (rtpstat) {
+		memcpy(rtpstat, &find, sizeof(*rtpstat));
+		/* ignore: rtp->stamp */
+		rtpstat->seq = seq;
+		rtpstat->packets = 1;
+	    
+		HASH_ADD(hh, curmem, HASH_FIRST, HASH_SIZE(*rtpstat), rtpstat);
+	    }
+	} else {
+	    if (old->seq + 1 == seq) {
+		/* Excellent! */
+	    } else {
+		int16_t diff = seq - old->seq;
+		if (diff < -15 || 15 < diff) {
+		    old->jumps += 1;
+		} else if (diff > 0) {
+		    old->missed += 1;
+		    old->misssize += (diff - 1);
+		} else {
+		    old->late += 1;
+		}
+	    }
+	    old->packets += 1;
+	    old->seq = seq;
+	}
+
+	/* HASH_ADD may have mutated the pointer. */
+	sniff__memory->rtphash[recently_active] = curmem;
+    }
 }
+    
 
-void sniff_loop(int packet_socket, struct memory_t *memory) {
-#define SNIFF_SIZE (sizeof(struct sniff_ether) + sizeof(struct sniff_ip) + \
-		    sizeof(struct sniff_udp) + sizeof(struct sniff_rtp))
-    ssize_t ret;
-    struct sockaddr_ll saddr_ll;
-    unsigned saddr_ll_size = sizeof(struct sockaddr_ll);
-    uint8_t datagram[SNIFF_SIZE];
-    struct sniff_ether *ether = (struct sniff_ether*)datagram;
-    struct sniff_ip *ip = (struct sniff_ip*)(datagram + 14);
-    struct sniff_ip *ipq = (struct sniff_ip*)(datagram + 18);
 
+void sniff_loop(pcap_t *handle, struct memory_t *memory) {
     /* Set memory and other globals */
+    sniff__handle = handle;
     sniff__memory = memory;
-//    sniff__memory[0] = memory1;
-//    sniff__memory[1] = memory2;
-//  sniff__memp = sniff__memory[0];
-    sniff__done = 0;
 
     /* Add signal handlers */
     util_signal_set(SIGUSR1, sniff__switch_memory);
@@ -192,128 +242,16 @@ void sniff_loop(int packet_socket, struct memory_t *memory) {
     util_signal_set(SIGQUIT, sniff__loop_done);
     util_signal_set(SIGTERM, sniff__loop_done);
 
-    /* FIXME: Put the interfaces in promiscuous mode.. you would do this
-     * by hand for now (/sbin/ip link set eth0 up promisc on) if you
-     * want to view other peoples packets. */
-
 #ifndef NDEBUG
     fprintf(stderr, "sniff_loop: Starting loop (mem %p/%p/%i).\n",
 	    memory->rtphash[0], memory->rtphash[1], memory->active);
 #endif
 
-    do {
-	while (!sniff__done && (ret = recvfrom(
-	    packet_socket,
-	    datagram,
-	    SNIFF_SIZE,
-	    0,
-	    (struct sockaddr*)&saddr_ll,
-	    &saddr_ll_size
-	)) > 0) {
-	    /* Process only ETH_P_IP/ETH_P_8021Q packets.
-	     * Make sure we count the ethernet frame lengths as well (18 resp. 22 bytes). */
-	    struct sniff_ip *l_ip;
-#if 0
-	    uint16_t vlan;
-	    uint16_t tlen; /* total */
-#endif
-	    
-	    if (ether->type == ETH_P_IP) {
-		l_ip = ip;
-#if 0
-		vlan = 0;
-		tlen = ntohs(ip->len);
-#endif
-	    } else if (ether->type == ETH_P_8021Q && ether->type2 == ETH_P_IP) {
-		l_ip = ipq;
-#if 0
-#if BYTE_ORDER == LITTLE_ENDIAN
-		vlan = ((uint8_t*)&ether->pcp_cfi_vid)[1] | ((((uint8_t*)&ether->pcp_cfi_vid)[0] & 0xf) << 8),
-#elif BYTE_ORDER == BIG_ENDIAN
-		vlan = ether->pcp_cfi_vid & 0xfff,
-#endif
-		tlen = ntohs(ipq->len) + 22;
-#endif
-	    } else {
-		/* Skip. */
-		continue;
-	    }
+    /* This uses the fast PACKET_RX_RING if available. */
+    pcap_loop(handle, 0, sniff_got_packet, NULL);
 
-	    if (l_ip->proto == PROTO_UDP) {
-		struct sniff_udp *udp = (struct sniff_udp*)(l_ip + 1);
-		uint16_t sport = htons(udp->sport);
-		uint16_t dport = htons(udp->dport);
-		struct sniff_rtp *rtp = (struct sniff_rtp*)(udp + 1);
-		
-		if (sport == 53 || dport == 53)
-		    continue;
-		if (ntohs(udp->len) < sizeof(struct sniff_rtp))
-		    continue;
-		if (rtp->ver != 2)
-		    continue;
-
-		{
-		    int recently_active = memory->active;
-		    struct rtpstat_t *curmem = memory->rtphash[recently_active];
-		    uint16_t seq = ntohs(rtp->seq);
-		    struct rtpstat_t find = {
-			.src_ip = ntohl(l_ip->src),
-			.dst_ip = ntohl(l_ip->dst),
-			.src_port = sport,
-			.dst_port = dport,
-			/* ignore: tlen, vlan */
-			.ssrc = ntohl(rtp->ssrc),
-			/* the rest: zero */
-		    };
-		    struct rtpstat_t *old;
-
-#if 0
-		    fprintf(stderr, "len: %hhu, %hhu, %hhu, %hhu, %hhu, %hhu\n",
-			    rtp->ver, rtp->p, rtp->x, rtp->cc, rtp->m, rtp->pt);
-#endif
-
-		    HASH_FIND(hh, curmem, &find.HASH_FIRST, HASH_SIZE(find), old);
-		    if (!old) {
-			struct rtpstat_t *rtpstat = malloc(sizeof(*rtpstat));
-			if (rtpstat) {
-			    memcpy(rtpstat, &find, sizeof(*rtpstat));
-			    /* ignore: rtp->stamp */
-			    rtpstat->seq = seq;
-			    rtpstat->packets = 1;
-			
-			    HASH_ADD(hh, curmem, HASH_FIRST, HASH_SIZE(*rtpstat), rtpstat);
-			}
-		    } else {
-			if (old->seq + 1 == seq) {
-			    /* Excellent! */
-			} else {
-			    int16_t diff = seq - old->seq;
-			    if (diff < -15 || 15 < diff) {
-				old->jumps += 1;
-			    } else if (diff > 0) {
-				old->missed += 1;
-				old->misssize += (diff - 1);
-			    } else {
-				old->late += 1;
-			    }
-			}
-			old->packets += 1;
-			old->seq = seq;
-		    }
-
-		    /* HASH_ADD may have mutated the pointer. */
-		    memory->rtphash[recently_active] = curmem;
-		}
-	    }
-	}
-    } while (errno == EINTR && !sniff__done);
-
-    /* Check errors */
-    if (!sniff__done)
-	perror("recvfrom");
 #ifndef NDEBUG
-    else
-	fprintf(stderr, "sniff_loop: Ended loop at user/system request.\n");
+    fprintf(stderr, "sniff_loop: Ended loop at user/system request.\n");
 #endif
 
     /* Remove signal handlers */
@@ -322,7 +260,6 @@ void sniff_loop(int packet_socket, struct memory_t *memory) {
     util_signal_set(SIGHUP, SIG_IGN);
     util_signal_set(SIGQUIT, SIG_IGN);
     util_signal_set(SIGTERM, SIG_IGN);
-#undef SNIFF_SIZE
 }
 
 static void sniff__switch_memory(int signum) {
@@ -336,5 +273,5 @@ static void sniff__switch_memory(int signum) {
 }
 
 static void sniff__loop_done(int signum) {
-    sniff__done = 1;
+    pcap_breakloop(sniff__handle);
 }

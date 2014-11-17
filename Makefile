@@ -7,7 +7,7 @@ ifeq ($(CFLAGS),)
     CFLAGS = -Wall
 endif
 ifeq ($(LDFLAGS),)
-    LDFLAGS = -Wall -lpthread
+    LDFLAGS = -Wall -lpthread -lpcap
 endif
 
 .PHONY: all clean \
@@ -21,20 +21,20 @@ clean:
 rtpsniff:
 	APPNAME="$@" CPPFLAGS="$(CPPFLAGS)" \
 	CFLAGS="$(CFLAGS) -g -O3" LDFLAGS="$(LDFLAGS) -g" \
-	MODULES="rtpsniff sniff_packsock storage_console timer_interval util" \
+	MODULES="rtpsniff sniff_rtp storage_console timer_interval util" \
 	$(MAKE) bin/$@
 
 rtpsniff-nodebug:
 	APPNAME="$@" CPPFLAGS="$(CPPFLAGS) -DNDEBUG" \
 	CFLAGS="$(CFLAGS) -O3" LDFLAGS="$(LDFLAGS) -O3" \
-	MODULES="rtpsniff sniff_packsock storage_console timer_interval util" \
+	MODULES="rtpsniff sniff_rtp storage_console timer_interval util" \
 	$(MAKE) bin/$@
 	@strip bin/$@
 
 rtpsniff-verbose:
 	APPNAME="$@" CPPFLAGS="$(CPPFLAGS) -DDEBUG -DPRINT_EVERY_PACKET" \
 	CFLAGS="$(CFLAGS) -g -O0" LDFLAGS="$(LDFLAGS) -g" \
-	MODULES="rtpsniff sniff_packsock storage_console timer_interval util" \
+	MODULES="rtpsniff sniff_rtp storage_console timer_interval util" \
 	$(MAKE) bin/$@
 
 
