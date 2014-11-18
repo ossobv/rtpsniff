@@ -55,6 +55,9 @@ TODO
         102: [UUUUUx.x.] (95..103)
 
     That way we could count dupes and properly check reordering.
+    (Store as 2bitfield? 00=unknown, 11=set, 01=skipped?
+    init=0, increment: val=(val<<2)|3, skip: val=(val<<2)|1
+    oldmask=(val<<(2*seqdiff))&0x3)
 
 
 Docs
