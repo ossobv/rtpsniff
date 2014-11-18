@@ -1,12 +1,71 @@
-rtpsniff
+RTPSniff
 ========
 
+RTPSniff is a tool to sniff RTP traffic and show stats about it.
+
+(I'm considering renaming `rtpsniff` to `rtpstat` -- like `vmstat` --
+since it prints a status update every N seconds.)
+
+
+TODO
+----
+
+* Change the interface:
+  * `rtpsniff 10` should show the summary every 10 seconds, like
+    `vmstat`.
+  * `-v` should make things verbose.
+  * `-i` for the interface (take eth0 by default).
+  * `-B` for buffer size? or `-P` for packets per second?
+  * `-b` for bpf filter? or `-p` for pcap-style filter?
+    and default to udp and not 53? add example for filtering even
+    ports only?
+    `udp and not port 53 and (udp[1] & 1 = 0) and (udp[3] & 1 = 0)`
+  * Take into account that we may want to dump the contents.
+
+* Decide the best form of output. Allow sequence reordering as long as
+  it's within reasonable limits.
+
+* Output requirements are:
+  * A total of the RTP loss/badness; preferably a percentage.
+  * List of streams with issues.
+  * Current output looks like this:
+
+        RTP: 21x.17x.21x.18x:5014 > 19x.3x.11x.10x:17886, \
+          ssrc: 4022267390, packets: 43, seq: 47, missed: 5, \
+          misssize: 5, late: 0, jump: 0
+        RTP: 19x.3x.11x.10x:14136 > 21x.17x.21x.18x:5012, \
+          ssrc: 4022267390, packets: 39, seq: 47, missed: 4, \
+          misssize: 4, late: 0, jump: 0
+        RTP-SUM: streams 1097, packets 214039, lost 69 (0.03%), \
+          late 140 (0.07%)
+
+  * For starters, the individual streams should get a loss counter.
+
+* Move libpcap stuff out of rtpsniff.c and into sniff\_pcap.c.
+* Move rtp stuff out of sniff\_rtp.c into cap\_rtp.c.
+* Document/note that timestamps are not used, only sequence numbers.
+* Document/note that the streams also include RTCP.
+
+* Features:
+  * Parse RTCP from the wire and print that.
+  * Create a "jitter/reorder"-buffer to store sequence numbers:
+ 
+        100: [UUUUUUUUU] (91..99)
+        104: [UUUUUx...] (95..103)
+        102: [UUUUUx.x.] (95..103)
+
+    That way we could count dupes and properly check reordering.
+
+
+Docs
+----
+  
 * This is an adapted version of lightcount, altered to sniff RTP
   traffic and show which streams have packet loss.
   URL: https://code.osso.nl/projects/lightcount
 
-* Note that the streams also include RTCP.
+* Simulating packet loss from the gateway:
 
-* Right now the tool eats very much CPU. This is most likely caused
-  by all the recvfrom. We should fix this by using PACKET\_RX\_RING
-  like tcpdump does.
+      # 45% drop should be sufficient to get a nice robotic sound.
+      iptables -I FORWARD -d SOME\_IP -p udp \
+        -m statistic --mode random --probability 0.45 -j DROP
