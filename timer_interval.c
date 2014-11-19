@@ -110,7 +110,7 @@ int timer_loop_bg(struct memory_t *memory) {
 	perror("pthread_create");
 	return -1;
     }
-#ifdef NDEBUG
+#ifndef NDEBUG
     fprintf(stderr, "timer_loop_bg: Thread %p started.\n", (void*)timer__thread);
 #endif
     return 0;
