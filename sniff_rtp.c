@@ -242,6 +242,7 @@ void sniff_loop(pcap_t *handle, struct memory_t *memory) {
             return;
     }
 
+    // FIXME: move this to out_*
     //fprintf(stderr, "%u packets captured\n", packets_captured);
     // and how many minutes? produce a grand total?
     fprintf(stderr, "%u packets received by filter\n", stat.ps_recv);
