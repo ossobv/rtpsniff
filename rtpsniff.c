@@ -100,7 +100,7 @@ void rtpsniff_help() {
 	"    go too low, the buffers won't be sufficient.\n"
 	"  IFACE is the interface to sniff on.\n"
 	"  PCAP_FILTER is the common BPF filter.\n"
-	"Example: rtpsniff 100 eth0 'udp and not port 53'\n"
+	"Example: rtpsniff eth0 100 'udp and not port 53'\n"
 	"\n"
     );
 }
