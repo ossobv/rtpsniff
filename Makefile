@@ -10,6 +10,9 @@ ifeq ($(LDFLAGS),)
     # -lslowpoll goes first
     LDFLAGS = -Wall -L./bin -lslowpoll -lpthread -lpcap
 endif
+ifeq ($(PREFIX),)
+    PREFIX = /usr/local
+endif
 
 
 .PHONY: all clean distclean variables \
@@ -46,12 +49,12 @@ rtpsniff-debug: variables
 .PHONY: install uninstall
 
 install: bin/rtpsniff bin/libslowpoll.so
-	install -o root -m 644 bin/libslowpoll.so /usr/local/lib/
-	ldconfig
-	install -o root -m 755 bin/rtpsniff /usr/local/bin/
+	install -DT -m 644 bin/libslowpoll.so $(PREFIX)/lib/libslowpoll.so
+	install -DT -m 755 bin/rtpsniff $(PREFIX)/sbin/rtpsniff
+	-ldconfig
 uninstall:
-	$(RM) /usr/local/lib/libslowpoll.so /usr/local/bin/rtpsniff
-	ldconfig
+	$(RM) $(PREFIX)/lib/libslowpoll.so $(PREFIX)/sbin/rtpsniff
+	-ldconfig
 
 
 $(addprefix bin/.$(APPNAME)/, $(addsuffix .o, $(MODULES))): Makefile endian.h rtpsniff.h
