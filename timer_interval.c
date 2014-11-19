@@ -28,7 +28,7 @@ with RTPSniff.  If not, see <http://www.gnu.org/licenses/>.
 
 /* Settings */
 #ifndef INTERVAL_SECONDS
-#   define INTERVAL_SECONDS 10		/* wake the storage engine every N seconds */
+#   define INTERVAL_SECONDS 10 /* wake the storage engine every N seconds */
 #endif /* INTERVAL_SECONDS */
 
 #define TIMER__METHOD_NSLEEP 1
@@ -109,7 +109,7 @@ int timer_loop_bg(struct memory_t *memory) {
 	perror("pthread_create");
 	return -1;
     }
-#ifndef NDEBUG
+#ifdef NDEBUG
     fprintf(stderr, "timer_loop_bg: Thread %p started.\n", (void*)timer__thread);
 #endif
     return 0;
@@ -231,14 +231,14 @@ static void *timer__run(void *thread_arg) {
 
 	if (first_run_skipped) {
 	    /* Delegate the actual writing to storage. */
-	    storage_write(sample_begin_time, INTERVAL_SECONDS, timer__memory->rtphash[previously_active]);
+	    out_write(sample_begin_time, INTERVAL_SECONDS, timer__memory->rtphash[previously_active]);
 	} else {
 	    /* On first run, we started too late in the interval. Ignore those counts. */
 	    first_run_skipped = 1;
 	}
 
 	/* Reset mem for next run */
-	storage_memfree(&timer__memory->rtphash[previously_active]);
+	sniff_release(&timer__memory->rtphash[previously_active]);
     }
     
 #ifndef NDEBUG

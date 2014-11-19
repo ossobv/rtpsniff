@@ -21,27 +21,23 @@ with RTPSniff.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdio.h>
 
 
-void storage_help() {
+void out_help() {
     printf(
-	"/********************* module: storage (console) ******************************/\n"
-	"This is a dummy storage module. Use this to test the rest of the program when\n"
-	"you don't have or want a database.\n"
+	"/********************* module: out (console)  *********************************/\n"
+	"This is the console output module.\n"
+	"FIXME: define what it does...\n"
 	"\n"
-#if 0 /* FIXME */
-#endif 
     );
 }
 
-int storage_open(char const *config_file) {
-    printf("Initializing storage: config_file=\"%s\"\n", config_file);
+int out_open(char const *config_file) {
     return 0;
 }
 
-void storage_close() {
-    printf("Finishing storage!\n");
+void out_close() {
 }
 
-void storage_write(uint32_t unixtime_begin, uint32_t interval, struct rtpstat_t *memory) {
+void out_write(uint32_t unixtime_begin, uint32_t interval, struct rtpstat_t *memory) {
     char src_ip[16];
     char dst_ip[16];
     unsigned streams = 0;
@@ -104,13 +100,4 @@ void storage_write(uint32_t unixtime_begin, uint32_t interval, struct rtpstat_t 
 	       late, 100.0 * late / packets);
     }
     fflush(stdout);
-}
-
-void storage_memfree(struct rtpstat_t **memory) {
-    /* FIXME: move me to sniff_pcap? */
-    struct rtpstat_t *rtpstat, *tmp;
-    HASH_ITER(hh, *memory, rtpstat, tmp) {
-	HASH_DEL(*memory, rtpstat);
-	free(rtpstat);
-    }
 }

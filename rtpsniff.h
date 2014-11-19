@@ -34,7 +34,7 @@ with RTPSniff.  If not, see <http://www.gnu.org/licenses/>.
  |                                                                            |
  | The `*_help` functions provide implementation specific information.        |
  | Everything is assumed to be single-threaded and non-reentrant, except for  |
- | the timer that uses a thread to call `storage_write` at a specified        |
+ | the timer that uses a thread to call `out_write` at a specified        |
  | interval.                                                                  |
  *----------------------------------------------------------------------------*/
 
@@ -95,23 +95,23 @@ void rtpsniff_help(); /* show help */
 void sniff_help(); /* show info */
 int sniff_snaplen();
 void sniff_loop(pcap_t *handle, struct memory_t *memory);
+void sniff_release(struct rtpstat_t **memory);
 
 
 /*----------------------------------------------------------------------------*
  | Module: storage                                                            |
  |                                                                            |
- | Stores the packet/byte count averages. You must call `storage_open` and    |
- | `storage_close` while single-threaded. A config file name must be passed   |
- | to `storage_open` that can be used to read settings like (1) which IP      |
+ | Stores the packet/byte count averages. You must call `out_open` and    |
+ | `out_close` while single-threaded. A config file name must be passed   |
+ | to `out_open` that can be used to read settings like (1) which IP      |
  | addresses to store/ignore or (2) to which database to connect.             |
  |                                                                            |
  | Calls: (nothing)                                                           |
  *----------------------------------------------------------------------------*/
-void storage_help();
-int storage_open(char const *config_file);
-void storage_close();
-void storage_write(uint32_t unixtime_begin, uint32_t interval, struct rtpstat_t *rtphash);
-void storage_memfree(struct rtpstat_t **rtphash); /* FIXME */
+void out_help();
+int out_open(char const *config_file);
+void out_close();
+void out_write(uint32_t unixtime_begin, uint32_t interval, struct rtpstat_t *rtphash);
 
 
 /*----------------------------------------------------------------------------*
@@ -119,9 +119,9 @@ void storage_memfree(struct rtpstat_t **rtphash); /* FIXME */
  |                                                                            |
  | Runs a thread that wakes up every interval. When waking up, it raises      |
  | SIGUSR1 to signal `sniff_loop` to begin writing to a different buffer so   |
- | it can safely give the current buffer to `storage_write` for processing.   |
+ | it can safely give the current buffer to `out_write` for processing.   |
  |                                                                            |
- | Calls: `storage_write` (from a thread)                                     |
+ | Calls: `out_write` (from a thread)                                     |
  *----------------------------------------------------------------------------*/
 void timer_help();
 int timer_loop_bg(struct memory_t *memory);

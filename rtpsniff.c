@@ -41,7 +41,7 @@ int main(int argc, char const *const *argv) {
 	rtpsniff_help();
 	sniff_help();
 	timer_help();
-	storage_help();
+	out_help();
 	return 0;
     }
 
@@ -85,22 +85,26 @@ int main(int argc, char const *const *argv) {
     timer_loop_stop();
 
     /* Finish/close open stuff */
-    storage_memfree(&memory.rtphash[0]);
-    storage_memfree(&memory.rtphash[1]);
+    sniff_release(&memory.rtphash[0]);
+    sniff_release(&memory.rtphash[1]);
 	
-    storage_close();
+    out_close();
     pcap_close(handle);
     return 0;
 }
 
 void rtpsniff_help() {
     printf(
-	"Usage: rtpsniff IFACE MAX_KPPS PCAP_FILTER\n"
+	"Usage:\n"
+	"  rtpsniff IFACE MAX_KPPS PCAP_FILTER\n"
+	"\n"
 	"  MAX_KPPS is the amount of Kpackets per second you expect. if you\n"
 	"    go too low, the buffers won't be sufficient.\n"
 	"  IFACE is the interface to sniff on.\n"
 	"  PCAP_FILTER is the common BPF filter.\n"
-	"Example: rtpsniff eth0 100 'udp and not port 53'\n"
+	"\n"
+	"Example:\n"
+	"  rtpsniff eth0 100 'udp and not port 53'\n"
 	"\n"
     );
 }

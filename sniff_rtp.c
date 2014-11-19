@@ -99,8 +99,6 @@ struct sniff_rtp {
 #define PT_ULAW 0
 #define PT_ALAW 8
 
-//static struct rtpstat_t **sniff__memory[2]; /* two locations to store counts in */
-//static struct rtpstat_t **sniff__memp;	    /* the "current" memory location */
 static struct memory_t *sniff__memory;
 static pcap_t *sniff__handle;
 
@@ -111,32 +109,9 @@ static void sniff__loop_done(int signum);
 
 void sniff_help() {
     printf(
-	"/********************* module: sniff (packet_socket) **************************/\n"
-	"Sniff uses a packet socket to listen for all inbound and outbound packets.\n"
-	"Specify the interface name as IFACE or 'any' if you want to listen on all\n"
-	"interfaces.\n"
+	"/********************* module: sniff (pcap+rtp) *******************************/\n"
+	"Sniff uses libpcap to listen for all incoming and outgoing RTP packets.\n"
 	"\n"
-#if 0 /* FIXME */
-	"Internally, we listen on the ETH_P_ALL SOCK_RAW protocol for packets with\n"
-	"an ETH_P_IP or ETH_P_8021Q ethernet type. (In 802.1q packets we examine only\n"
-	"IP packets. Double tagged packets are ignored.) The packet count, length\n"
-	"(including ethernet frame) and destination is recorded.\n"
-	"\n"
-	"Note one: packets from localhost to localhost are seen twice. We seem them\n"
-	"once outbound and once inbound. And, as both source and destination is\n"
-	"counted, you should expect a multiplication of four. You should expect a\n"
-	"similar multiplication on machines doing NAT.\n"
-	"\n"
-	"Note two: if you want to see VLANs, your kernel must not process them. The\n"
-	"Linux kernels on which this is tested use something called hardware VLAN\n"
-	"acceleration. This mangles the ethernet frames to look like regular IP\n"
-	"containing frames. Unload the 8021q module to be sure.\n"
-	"\n"
-	"Note three: if you want to capture packets not intended for your host -- a\n"
-	"common setup is to mirror all traffic to a host that only runs the lightcount\n"
-	"daemon -- you need to manually set the interfaces in promiscuous mode.\n"
-	"\n"
-#endif
     );
 }
 
@@ -267,6 +242,7 @@ void sniff_loop(pcap_t *handle, struct memory_t *memory) {
     }
 
     //fprintf(stderr, "%u packets captured\n", packets_captured);
+    // and how many minutes? produce a grand total?
     fprintf(stderr, "%u packets received by filter\n", stat.ps_recv);
     fprintf(stderr, "%u packets dropped by kernel\n", stat.ps_drop);
     fprintf(stderr, "%u packets dropped by interface\n", stat.ps_ifdrop);
@@ -291,4 +267,12 @@ static void sniff__switch_memory(int signum) {
 
 static void sniff__loop_done(int signum) {
     pcap_breakloop(sniff__handle);
+}
+
+void sniff_release(struct rtpstat_t **memory) {
+    struct rtpstat_t *rtpstat, *tmp;
+    HASH_ITER(hh, *memory, rtpstat, tmp) {
+	HASH_DEL(*memory, rtpstat);
+	free(rtpstat);
+    }
 }

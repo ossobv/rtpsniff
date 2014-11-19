@@ -10,7 +10,7 @@ since it prints a status update every N seconds.)
 TODO
 ----
 
-* Add storage\_syslog.c (out\_syslog.c).
+* Add out\_syslog.c.
 * Allow output of either all streams or only those "with issues".
 
 * Change the interface:
