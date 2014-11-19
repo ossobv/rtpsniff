@@ -109,7 +109,8 @@ static void sniff__loop_done(int signum);
 
 void sniff_help() {
     printf(
-	"/********************* module: sniff (pcap+rtp) *******************************/\n"
+	"/*********************"
+	" module: sniff (pcap+rtp) *******************************/\n"
 	"Sniff uses libpcap to listen for all incoming and outgoing RTP packets.\n"
 	"\n"
     );

@@ -23,7 +23,8 @@ with RTPSniff.  If not, see <http://www.gnu.org/licenses/>.
 
 void out_help() {
     printf(
-	"/********************* module: out (console)  *********************************/\n"
+	"/*********************"
+	" module: out (console) **********************************/\n"
 	"This is the console output module.\n"
 	"FIXME: define what it does...\n"
 	"\n"

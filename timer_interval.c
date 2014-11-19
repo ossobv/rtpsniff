@@ -56,7 +56,8 @@ static void *timer__run(void *thread_arg);
 
 void timer_help() {
     printf(
-	"/********************* module: timer (interval) *******************************/\n"
+	"/*********************"
+	" module: timer (interval) *******************************/\n"
 	"#%s USE_NSLEEP_TIMER\n"
 	"#define INTERVAL_SECONDS %" SCNu32 "\n"
 	"\n"
@@ -169,22 +170,32 @@ static void *timer__run(void *thread_arg) {
 
 	/* Calculate how long to sleep */
 #if TIMER__METHOD == TIMER__METHOD_NSLEEP
-	sleep_useconds = 1000000 * (INTERVAL_SECONDS - (current_time.tv_sec % INTERVAL_SECONDS)) - current_time.tv_usec;
+	sleep_useconds = (1000000 *
+			  (INTERVAL_SECONDS - (current_time.tv_sec % INTERVAL_SECONDS)) -
+			  current_time.tv_usec);
 #   ifndef NDEBUG
-	fprintf(stderr, "timer__run: Current time is %i (%02i:%02i:%02i.%06i), sleep planned for %i useconds.\n",
+	fprintf(stderr, "timer__run: Current time is %i (%02i:%02i:%02i.%06i), "
+			"sleep planned for %i useconds.\n",
 		(int)current_time.tv_sec,
-		(int)(current_time.tv_sec / 3600) % 24, (int)(current_time.tv_sec / 60) % 60, (int)current_time.tv_sec % 60,
+		(int)(current_time.tv_sec / 3600) % 24,
+		(int)(current_time.tv_sec / 60) % 60,
+		(int)current_time.tv_sec % 60,
 		(int)current_time.tv_usec, sleep_useconds);
 #   endif /* NDEBUG */
 #elif TIMER__METHOD == TIMER__METHOD_SEMAPHORE
 	new_time.tv_sec = sample_begin_time + INTERVAL_SECONDS;
 	new_time.tv_nsec = 0;
 #   ifndef NDEBUG
-	fprintf(stderr, "timer__run: Current time is %i (%02i:%02i:%02i.%06i), sleep planned until %02i:%02i:%02i.\n",
+	fprintf(stderr, "timer__run: Current time is %i (%02i:%02i:%02i.%06i), "
+			"sleep planned until %02i:%02i:%02i.\n",
 		(int)current_time.tv_sec,
-		(int)(current_time.tv_sec / 3600) % 24, (int)(current_time.tv_sec / 60) % 60, (int)current_time.tv_sec % 60,
+		(int)(current_time.tv_sec / 3600) % 24,
+		(int)(current_time.tv_sec / 60) % 60,
+		(int)current_time.tv_sec % 60,
 		(int)current_time.tv_usec,
-		(int)(new_time.tv_sec / 3600) % 24, (int)(new_time.tv_sec / 60) % 60, (int)new_time.tv_sec % 60);
+		(int)(new_time.tv_sec / 3600) % 24,
+		(int)(new_time.tv_sec / 60) % 60,
+		(int)new_time.tv_sec % 60);
 #   endif /* NDEBUG */
 #endif /* TIMER__METHOD == TIMER__METHOD_SEMAPHORE */
 
@@ -218,7 +229,9 @@ static void *timer__run(void *thread_arg) {
 	}
 	fprintf(stderr, "timer__run: Awake! Time is now %i (%02i:%02i:%02i.%06i).\n",
 		(int)current_time.tv_sec,
-		(int)(current_time.tv_sec / 3600) % 24, (int)(current_time.tv_sec / 60) % 60, (int)current_time.tv_sec % 60,
+		(int)(current_time.tv_sec / 3600) % 24,
+		(int)(current_time.tv_sec / 60) % 60,
+		(int)current_time.tv_sec % 60,
 		(int)current_time.tv_usec);
 #endif
 
@@ -231,7 +244,8 @@ static void *timer__run(void *thread_arg) {
 
 	if (first_run_skipped) {
 	    /* Delegate the actual writing to storage. */
-	    out_write(sample_begin_time, INTERVAL_SECONDS, timer__memory->rtphash[previously_active]);
+	    out_write(sample_begin_time, INTERVAL_SECONDS,
+		      timer__memory->rtphash[previously_active]);
 	} else {
 	    /* On first run, we started too late in the interval. Ignore those counts. */
 	    first_run_skipped = 1;
