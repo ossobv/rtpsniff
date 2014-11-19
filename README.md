@@ -10,6 +10,9 @@ since it prints a status update every N seconds.)
 TODO
 ----
 
+* Add storage\_syslog.c (out\_syslog.c).
+* Allow output of either all streams or only those "with issues".
+
 * Change the interface:
   * `rtpsniff 10` should show the summary every 10 seconds, like
     `vmstat`.
@@ -26,6 +29,10 @@ TODO
   it's within reasonable limits.
 
 * Output requirements are:
+  * Fix that all packets are counted, not just the seen ones, so a percentage
+    more accurately reflects loss.
+  * Always show the total packets next to the percentage. Because only a
+    percentage is misleading when there are only a few streams.
   * A total of the RTP loss/badness; preferably a percentage.
   * List of streams with issues.
   * Current output looks like this:
