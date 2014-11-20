@@ -10,7 +10,12 @@ since it prints a status update every N seconds.)
 TODO
 ----
 
-* Add out\_syslog.c.
+* Add logging to `/var/run` instead of syslog. That helps zabbix.
+  (Don't forget to include options to set the user and the file permissions.)
+
+* Also log the unixtime and interval. If needed, the zabbix reader can then
+  divide by interval to get packets/second. And zabbix can check if the unixtime
+  is recent enough to consider this value.
 
 * Allow output of either all streams or only those "with issues".
 
@@ -86,5 +91,5 @@ Docs
 * Simulating packet loss from the gateway:
 
         # 45% drop should be sufficient to get a nice robotic sound.
-        iptables -I FORWARD -d SOME\_IP -p udp \
+        iptables -I FORWARD -d SOME_IP -p udp \
           -m statistic --mode random --probability 0.45 -j DROP
