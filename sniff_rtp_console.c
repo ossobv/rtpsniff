@@ -1,6 +1,6 @@
 /* vim: set ts=8 sw=4 sts=4 noet: */
 /*======================================================================
-Copyright (C) 2008,2009,2014 OSSO B.V. <walter+rtpsniff@osso.nl>
+Copyright (C) 2008,2009,2014,2015 OSSO B.V. <walter+rtpsniff@osso.nl>
 This file is part of RTPSniff.
 
 RTPSniff is free software: you can redistribute it and/or modify it
