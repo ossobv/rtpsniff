@@ -245,14 +245,14 @@ static void *timer__run(void *thread_arg) {
 	if (first_run_skipped) {
 	    /* Delegate the actual writing to storage. */
 	    out_write(sample_begin_time, INTERVAL_SECONDS,
-		      timer__memory->rtphash[previously_active]);
+		      timer__memory->data[previously_active]);
 	} else {
 	    /* On first run, we started too late in the interval. Ignore those counts. */
 	    first_run_skipped = 1;
 	}
 
 	/* Reset mem for next run */
-	sniff_release(&timer__memory->rtphash[previously_active]);
+	sniff_release_data(&timer__memory->data[previously_active]);
     }
     
 #ifndef NDEBUG

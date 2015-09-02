@@ -31,7 +31,7 @@ int main(int argc, char const *const *argv) {
     int bufsize;
 
     struct memory_t memory = {
-	.rtphash = {NULL, NULL},
+	.data = {NULL, NULL},
 	.active = 0,
 	.request_switch = 0,
     };
@@ -85,8 +85,8 @@ int main(int argc, char const *const *argv) {
     timer_loop_stop();
 
     /* Finish/close open stuff */
-    sniff_release(&memory.rtphash[0]);
-    sniff_release(&memory.rtphash[1]);
+    sniff_release_data(&memory.data[0]);
+    sniff_release_data(&memory.data[1]);
 	
     out_close();
     pcap_close(handle);

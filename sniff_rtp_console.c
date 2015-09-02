@@ -1,6 +1,6 @@
 /* vim: set ts=8 sw=4 sts=4 noet: */
 /*======================================================================
-Copyright (C) 2014 OSSO B.V. <walter+rtpsniff@osso.nl>
+Copyright (C) 2008,2009,2014 OSSO B.V. <walter+rtpsniff@osso.nl>
 This file is part of RTPSniff.
 
 RTPSniff is free software: you can redistribute it and/or modify it
@@ -17,30 +17,31 @@ You should have received a copy of the GNU General Public License along
 with RTPSniff.  If not, see <http://www.gnu.org/licenses/>.
 ======================================================================*/
 
+#include "sniff_rtp.h"
+
 #include "rtpsniff.h"
-#include <syslog.h>
+#include <stdio.h>
 
 
 void out_help() {
     printf(
 	"/*********************"
-	" module: out (syslog) ***********************************/\n"
-	"This is the syslog output module. Logs to LOG_LOCAL7.\n"
+	" module: out (console) **********************************/\n"
+	"This is the console output module.\n"
 	"FIXME: define what it does...\n"
 	"\n"
     );
 }
 
 int out_open(char const *config_file) {
-    openlog("rtpsniff", LOG_NDELAY, LOG_LOCAL7);
     return 0;
 }
 
 void out_close() {
-    closelog();
 }
 
-void out_write(uint32_t unixtime_begin, uint32_t interval, struct rtpstat_t *memory) {
+void out_write(uint32_t unixtime_begin, uint32_t interval, void *data) {
+    struct rtpstat_t *memory = data;
     char src_ip[16];
     char dst_ip[16];
     unsigned streams = 0;
@@ -49,6 +50,9 @@ void out_write(uint32_t unixtime_begin, uint32_t interval, struct rtpstat_t *mem
     unsigned late = 0;
 
     struct rtpstat_t *rtpstat, *tmp;
+
+    printf("Storage output: unixtime_begin=%" SCNu32 ", interval=%" SCNu32 ", memory=%p\n",
+	    unixtime_begin, interval, memory);
 
     HASH_ITER(hh, memory, rtpstat, tmp) {
 	streams += 1;
@@ -72,30 +76,32 @@ void out_write(uint32_t unixtime_begin, uint32_t interval, struct rtpstat_t *mem
 	sprintf(dst_ip, "%hhu.%hhu.%hhu.%hhu",
 		rtpstat->dst_ip >> 24, (rtpstat->dst_ip >> 16) & 0xff,
 		(rtpstat->dst_ip >> 8) & 0xff, rtpstat->dst_ip & 0xff);
-	syslog(LOG_NOTICE,
-	       "stream=%" PRIu32 " from=%s:%hu to=%s:%hu "
-	       "packets=%" PRIu32 " lost=%" PRIu32 " lostpct=%.2f "
-	       "late=%" PRIu16 " latepct=%.2f "
-	       "missdetect=%" PRIu16 " jumpdetect=%" PRIu16 " "
-	       "lastseq=%" PRIu16,
-	       rtpstat->ssrc,
-	       src_ip, rtpstat->src_port,
-	       dst_ip, rtpstat->dst_port,
-	       rtpstat->packets,
-	       rtpstat->misssize, /* lost */
-	       100.0 * rtpstat->misssize / rtpstat->packets,
-	       rtpstat->late,
-	       100.0 * rtpstat->late / rtpstat->packets,
-	       rtpstat->missed,
-	       rtpstat->jumps,
-	       rtpstat->seq);
+	printf("RTP: %s:%hu > %s:%hu"
+		", ssrc: %" PRIu32
+		", packets: %" PRIu32
+		", seq: %" PRIu16
+		", missed: %" PRIu16
+		", misssize: %" PRIu16
+		", late: %" PRIu16
+		", jump: %" PRIu16
+		"\n",
+		src_ip, rtpstat->src_port,
+		dst_ip, rtpstat->dst_port,
+		rtpstat->ssrc,
+		rtpstat->packets,
+		rtpstat->seq,
+		rtpstat->missed,
+		rtpstat->misssize,
+		rtpstat->late,
+		rtpstat->jumps);
     }
 
     if (!packets) {
-	syslog(LOG_NOTICE, "streams=0 packets=0 lost=0 lostpct=0 late=0 latepct=0");
+	printf("RTP-SUM: nothing\n");
     } else {
-	syslog(LOG_NOTICE, "streams=%u packets=%u lost=%u lostpct=%.2f late=%u latepct=%.2f",
+	printf("RTP-SUM: streams %u, packets %u, lost %u (%.2f%%), late %u (%.2f%%)\n",
 	       streams, packets, lost, 100.0 * lost / packets,
 	       late, 100.0 * late / packets);
     }
+    fflush(stdout);
 }

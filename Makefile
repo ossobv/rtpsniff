@@ -19,7 +19,7 @@ endif
 
 
 .PHONY: all clean distclean variables \
-	rtpsniff rtpsniff-debug rtpsniff-verbose
+	rtpsniff rtpsniff-debug
 
 all: rtpsniff rtpsniff-debug
 
@@ -31,23 +31,22 @@ distclean: clean
 variables:
 	@if test -z "$(MOD_OUT)"; then \
 	    echo 'Please select output module through MOD_OUT:' >&2; \
-	    echo '  make MOD_OUT=out_console  # for console output' >&2; \
-	    echo '  make MOD_OUT=out_syslog   # for syslog output' >&2; \
+	    echo '  make MOD_OUT=console  # for console output' >&2; \
+	    echo '  make MOD_OUT=syslog   # for syslog output' >&2; \
 	    false; fi
 
 rtpsniff: variables
 	APPNAME="$@" CPPFLAGS="$(CPPFLAGS) -DNDEBUG" \
 	CFLAGS="$(CFLAGS) -g -O3" LDFLAGS="$(LDFLAGS) -g -O3" \
-	MODULES="rtpsniff sniff_rtp $(MOD_OUT) timer_interval util" \
+	MODULES="rtpsniff sniff_rtp sniff_rtp_$(MOD_OUT) timer_interval util" \
 	$(MAKE) bin/$@
 	@#strip bin/$@
 
 rtpsniff-debug: variables
 	APPNAME="$@" CPPFLAGS="$(CPPFLAGS)" \
 	CFLAGS="$(CFLAGS) -g -O0" LDFLAGS="$(LDFLAGS) -g" \
-	MODULES="rtpsniff sniff_rtp $(MOD_OUT) timer_interval util" \
+	MODULES="rtpsniff sniff_rtp sniff_rtp_$(MOD_OUT) timer_interval util" \
 	$(MAKE) bin/$@
-
 
 
 .PHONY: install uninstall
@@ -57,7 +56,8 @@ install: bin/rtpsniff bin/libslowpoll.so
 	install -DT -m 755 bin/rtpsniff $(PREFIX)/sbin/rtpsniff
 	-ldconfig
 uninstall:
-	$(RM) $(PREFIX)/lib/libslowpoll.so $(PREFIX)/sbin/rtpsniff
+	$(RM) $(PREFIX)/lib/libslowpoll.so \
+		$(PREFIX)/sbin/rtpsniff
 	-ldconfig
 
 

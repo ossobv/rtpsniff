@@ -17,6 +17,8 @@ You should have received a copy of the GNU General Public License along
 with RTPSniff.  If not, see <http://www.gnu.org/licenses/>.
 ======================================================================*/
 
+#include "sniff_rtp.h"
+
 #include "rtpsniff.h"
 #include "endian.h"
 #include <sys/socket.h>
@@ -152,7 +154,7 @@ static void sniff_got_packet(u_char *args, const struct pcap_pkthdr *header,
 
     {
 	int recently_active = sniff__memory->active;
-	struct rtpstat_t *curmem = sniff__memory->rtphash[recently_active];
+	struct rtpstat_t *curmem = ((struct rtpstat_t **)sniff__memory->data)[recently_active];
 	uint16_t seq = ntohs(rtp->seq);
 	struct rtpstat_t find = {
 	    .src_ip = ntohl(ip->src),
@@ -200,7 +202,7 @@ static void sniff_got_packet(u_char *args, const struct pcap_pkthdr *header,
 	}
 
 	/* HASH_ADD may have mutated the pointer. */
-	sniff__memory->rtphash[recently_active] = curmem;
+	((struct rtpstat_t **)sniff__memory->data)[recently_active] = curmem;
     }
 }
 
@@ -227,7 +229,7 @@ void sniff_loop(pcap_t *handle, struct memory_t *memory) {
 
 #ifndef NDEBUG
     fprintf(stderr, "sniff_loop: Starting loop (mem %p/%p/%i).\n",
-	    memory->rtphash[0], memory->rtphash[1], memory->active);
+	    memory->data[0], memory->data[1], memory->active);
 #endif
 
     /* This uses the fast PACKET_RX_RING if available. */
@@ -262,8 +264,8 @@ static void sniff__switch_memory(int signum) {
     sniff__memory->active = !recently_active;
 #ifndef NDEBUG
     fprintf(stderr, "sniff__switch_memory: Switched from memory %d (%p) to %d (%p).\n",
-	    recently_active, sniff__memory->rtphash[recently_active],
-	    !recently_active, sniff__memory->rtphash[!recently_active]);
+	    recently_active, sniff__memory->data[recently_active],
+	    !recently_active, sniff__memory->data[!recently_active]);
 #endif
 }
 
@@ -271,7 +273,8 @@ static void sniff__loop_done(int signum) {
     pcap_breakloop(sniff__handle);
 }
 
-void sniff_release(struct rtpstat_t **memory) {
+void sniff_release_data(void **data) {
+    struct rtpstat_t **memory = (struct rtpstat_t **)data;
     struct rtpstat_t *rtpstat, *tmp;
     HASH_ITER(hh, *memory, rtpstat, tmp) {
 	HASH_DEL(*memory, rtpstat);
