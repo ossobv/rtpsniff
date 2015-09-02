@@ -38,14 +38,14 @@ variables:
 rtpsniff: variables
 	APPNAME="$@" CPPFLAGS="$(CPPFLAGS) -DNDEBUG" \
 	CFLAGS="$(CFLAGS) -g -O3" LDFLAGS="$(LDFLAGS) -g -O3" \
-	MODULES="rtpsniff sniff_rtp sniff_rtp_$(MOD_OUT) timer_interval util" \
+	MODULES="anysniff sniff_rtp sniff_rtp_$(MOD_OUT) timer_interval util" \
 	$(MAKE) bin/$@
 	@#strip bin/$@
 
 rtpsniff-debug: variables
 	APPNAME="$@" CPPFLAGS="$(CPPFLAGS)" \
 	CFLAGS="$(CFLAGS) -g -O0" LDFLAGS="$(LDFLAGS) -g" \
-	MODULES="rtpsniff sniff_rtp sniff_rtp_$(MOD_OUT) timer_interval util" \
+	MODULES="anysniff sniff_rtp sniff_rtp_$(MOD_OUT) timer_interval util" \
 	$(MAKE) bin/$@
 
 
@@ -61,7 +61,8 @@ uninstall:
 	-ldconfig
 
 
-$(addprefix bin/.$(APPNAME)/, $(addsuffix .o, $(MODULES))): Makefile endian.h rtpsniff.h
+$(addprefix bin/.$(APPNAME)/, $(addsuffix .o, $(MODULES))): \
+	  Makefile endian.h anysniff.h sniff_rtp.h
 
 bin/libslowpoll.so: slowpoll.c
 	@mkdir -p $(dir $@)

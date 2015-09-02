@@ -17,7 +17,7 @@ You should have received a copy of the GNU General Public License along
 with RTPSniff.  If not, see <http://www.gnu.org/licenses/>.
 ======================================================================*/
 
-#include "rtpsniff.h"
+#include "anysniff.h"
 #include "endian.h"
 #include <signal.h>
 #include <stdio.h>

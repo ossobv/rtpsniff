@@ -17,7 +17,7 @@ You should have received a copy of the GNU General Public License along
 with RTPSniff.  If not, see <http://www.gnu.org/licenses/>.
 ======================================================================*/
 
-#include "rtpsniff.h"
+#include "anysniff.h"
 #include <assert.h>
 #include <sys/time.h>
 #include <pthread.h>

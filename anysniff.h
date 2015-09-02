@@ -25,7 +25,7 @@ with RTPSniff.  If not, see <http://www.gnu.org/licenses/>.
 
 
 /*----------------------------------------------------------------------------*
- | Program: rtpsniff                                                          |
+ | Program: anysniff                                                          |
  |                                                                            |
  | The program is divided in a couple of modules that could be replaced by    |
  | different implementations. These modules must implement the functions      |
@@ -48,13 +48,13 @@ struct memory_t {
     
 
 /*----------------------------------------------------------------------------*
- | Module: rtpsniff                                                           |
+ | Module: anysniff                                                           |
  |                                                                            |
  | Does the user interface.                                                   |
  |                                                                            |
  | Calls: any of the functions listed here (from the main thread)             |
  *----------------------------------------------------------------------------*/
-void rtpsniff_help(); /* show help */
+void anysniff_help(); /* show help */
 
 
 /*----------------------------------------------------------------------------*

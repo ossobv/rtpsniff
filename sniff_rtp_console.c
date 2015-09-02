@@ -19,7 +19,7 @@ with RTPSniff.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "sniff_rtp.h"
 
-#include "rtpsniff.h"
+#include "anysniff.h"
 #include <stdio.h>
 
 
