@@ -19,9 +19,10 @@ endif
 
 
 .PHONY: all clean distclean variables \
-	rtpsniff rtpsniff-debug
+	rtpsniff rtpsniff-debug \
+	losssniff losssniff-debug
 
-all: rtpsniff rtpsniff-debug
+all: rtpsniff rtpsniff-debug losssniff losssniff-debug
 
 clean:
 	$(RM) -r bin
@@ -48,21 +49,36 @@ rtpsniff-debug: variables
 	MODULES="anysniff sniff_rtp sniff_rtp_$(MOD_OUT) timer_interval util" \
 	$(MAKE) bin/$@
 
+losssniff: variables
+	APPNAME="$@" CPPFLAGS="$(CPPFLAGS) -DNDEBUG" \
+	CFLAGS="$(CFLAGS) -g -O3" LDFLAGS="$(LDFLAGS) -g -O3" \
+	MODULES="anysniff sniff_loss sniff_loss_$(MOD_OUT) timer_interval util" \
+	$(MAKE) bin/$@
+	@#strip bin/$@
+
+losssniff-debug: variables
+	APPNAME="$@" CPPFLAGS="$(CPPFLAGS)" \
+	CFLAGS="$(CFLAGS) -g -O0" LDFLAGS="$(LDFLAGS) -g" \
+	MODULES="anysniff sniff_loss sniff_loss_$(MOD_OUT) timer_interval util" \
+	$(MAKE) bin/$@
+
 
 .PHONY: install uninstall
 
-install: bin/rtpsniff bin/libslowpoll.so
+install: bin/losssniff bin/rtpsniff bin/libslowpoll.so
 	install -DT -m 644 bin/libslowpoll.so $(PREFIX)/lib/libslowpoll.so
 	install -DT -m 755 bin/rtpsniff $(PREFIX)/sbin/rtpsniff
+	install -DT -m 755 bin/losssniff $(PREFIX)/sbin/losssniff
 	-ldconfig
 uninstall:
 	$(RM) $(PREFIX)/lib/libslowpoll.so \
+		$(PREFIX)/sbin/losssniff
 		$(PREFIX)/sbin/rtpsniff
 	-ldconfig
 
 
 $(addprefix bin/.$(APPNAME)/, $(addsuffix .o, $(MODULES))): \
-	  Makefile endian.h anysniff.h sniff_rtp.h
+	  Makefile endian.h anysniff.h sniff_loss.h sniff_rtp.h
 
 bin/libslowpoll.so: slowpoll.c
 	@mkdir -p $(dir $@)
