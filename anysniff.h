@@ -19,10 +19,8 @@ You should have received a copy of the GNU General Public License along
 with RTPSniff.  If not, see <http://www.gnu.org/licenses/>.
 ======================================================================*/
 
-#include "uthash.h"
 #include <inttypes.h>
 #include <pcap.h>
-#include <sys/types.h>
 
 
 /*----------------------------------------------------------------------------*

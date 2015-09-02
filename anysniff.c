@@ -22,6 +22,7 @@ with RTPSniff.  If not, see <http://www.gnu.org/licenses/>.
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 
 
@@ -116,6 +117,6 @@ void anysniff_help() {
 	"Example:\n"
 	"  %s eth0 100 'udp and not port 53'\n"
 	"\n",
-	argv0
+	argv0, argv0
     );
 }
