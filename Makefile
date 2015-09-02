@@ -8,7 +8,10 @@ ifeq ($(CFLAGS),)
 endif
 ifeq ($(LDFLAGS),)
     # -lslowpoll goes first
-    LDFLAGS = -Wall -L./bin -lslowpoll -lpthread -lpcap
+    LDFLAGS = -Wall -L./bin
+endif
+ifeq ($(LDLIBS),)
+    LDLIBS = -lslowpoll -lpthread -lpcap
 endif
 ifeq ($(PREFIX),)
     PREFIX = /usr/local
@@ -68,4 +71,4 @@ bin/.$(APPNAME)/%.o: %.c
 	@mkdir -p $(dir $@)
 	$(COMPILE.c) $< -o $@
 bin/$(APPNAME): bin/libslowpoll.so $(addprefix bin/.$(APPNAME)/, $(addsuffix .o, $(MODULES)))
-	$(LINK.o) -L./bin $(filter-out bin/libslowpoll.so, $^) -o $@
+	$(LINK.o) -L./bin $(filter-out bin/libslowpoll.so, $^) $(LDLIBS) -o $@
