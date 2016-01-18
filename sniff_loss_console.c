@@ -1,4 +1,4 @@
-/* vim: set ts=8 sw=4 sts=4 noet: */
+/* vim: set ts=8 sw=4 sts=4 et: */
 /*======================================================================
 Copyright (C) 2015 OSSO B.V. <walter+rtpsniff@osso.nl>
 This file is part of RTPSniff.
@@ -27,11 +27,11 @@ with RTPSniff.  If not, see <http://www.gnu.org/licenses/>.
 
 void out_help() {
     printf(
-	"/*********************"
-	" module: out (console) **********************************/\n"
-	"This is the console output module.\n"
-	"FIXME: define what it does...\n"
-	"\n"
+        "/*********************"
+        " module: out (console) **********************************/\n"
+        "This is the console output module.\n"
+        "FIXME: define what it does...\n"
+        "\n"
     );
 }
 
@@ -52,17 +52,17 @@ void out_write(uint32_t unixtime_begin, uint32_t interval, void *data) {
     time_time_t = time(NULL);
     localtime_r(&time_time_t, &time_localtime);
     if (strftime(timeprefix, 256, "%Y-%m-%d %H:%M:%S", &time_localtime) == 0)
-	abort();
+        abort();
 
     if (loss && loss->packets != 1) {
-	printf("%s: %" SCNu32 " packets (%" SCNu32 " out of order), "
-	       "%" SCNu64 " d-min-usec, "
-	       "%" SCNu64 " d-max-usec\n",
-	       timeprefix, loss->packets, loss->out_of_order,
-	       loss->min_diff_usec,
-	       loss->max_diff_usec);
+        printf("%s: %" SCNu32 " packets (%" SCNu32 " out of order), "
+               "%" SCNu64 " d-min-usec, "
+               "%" SCNu64 " d-max-usec\n",
+               timeprefix, loss->packets, loss->out_of_order,
+               loss->min_diff_usec,
+               loss->max_diff_usec);
     } else {
-	printf("%s: no data\n", timeprefix);
+        printf("%s: no data\n", timeprefix);
     }
     fflush(stdout);
 }

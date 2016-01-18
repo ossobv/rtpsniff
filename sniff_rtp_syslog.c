@@ -1,4 +1,4 @@
-/* vim: set ts=8 sw=4 sts=4 noet: */
+/* vim: set ts=8 sw=4 sts=4 et: */
 /*======================================================================
 Copyright (C) 2014,2015 OSSO B.V. <walter+rtpsniff@osso.nl>
 This file is part of RTPSniff.
@@ -25,11 +25,11 @@ with RTPSniff.  If not, see <http://www.gnu.org/licenses/>.
 
 void out_help() {
     printf(
-	"/*********************"
-	" module: out (syslog) ***********************************/\n"
-	"This is the syslog output module. Logs to LOG_LOCAL7.\n"
-	"FIXME: define what it does...\n"
-	"\n"
+        "/*********************"
+        " module: out (syslog) ***********************************/\n"
+        "This is the syslog output module. Logs to LOG_LOCAL7.\n"
+        "FIXME: define what it does...\n"
+        "\n"
     );
 }
 
@@ -54,51 +54,51 @@ void out_write(uint32_t unixtime_begin, uint32_t interval, void *data) {
     struct rtpstat_t *rtpstat, *tmp;
 
     HASH_ITER(hh, memory, rtpstat, tmp) {
-	streams += 1;
-	packets += rtpstat->packets;
-	lost += rtpstat->misssize;
-	late += rtpstat->late;
+        streams += 1;
+        packets += rtpstat->packets;
+        lost += rtpstat->misssize;
+        late += rtpstat->late;
 
-	/* Streams with significant amounts of packets */
-	if (rtpstat->packets < 20)
-	    continue;
-	/* Streams with issues */
-	if (rtpstat->missed == 0 && rtpstat->late == 0 && rtpstat->jumps == 0)
-	    continue;
-	/* Packets lost minimum 5% */
-	if (rtpstat->misssize * 100 / rtpstat->packets < 5)
-	    continue;
+        /* Streams with significant amounts of packets */
+        if (rtpstat->packets < 20)
+            continue;
+        /* Streams with issues */
+        if (rtpstat->missed == 0 && rtpstat->late == 0 && rtpstat->jumps == 0)
+            continue;
+        /* Packets lost minimum 5% */
+        if (rtpstat->misssize * 100 / rtpstat->packets < 5)
+            continue;
 
-	sprintf(src_ip, "%hhu.%hhu.%hhu.%hhu",
-		rtpstat->src_ip >> 24, (rtpstat->src_ip >> 16) & 0xff,
-		(rtpstat->src_ip >> 8) & 0xff, rtpstat->src_ip & 0xff);
-	sprintf(dst_ip, "%hhu.%hhu.%hhu.%hhu",
-		rtpstat->dst_ip >> 24, (rtpstat->dst_ip >> 16) & 0xff,
-		(rtpstat->dst_ip >> 8) & 0xff, rtpstat->dst_ip & 0xff);
-	syslog(LOG_NOTICE,
-	       "stream=%" PRIu32 " from=%s:%hu to=%s:%hu "
-	       "packets=%" PRIu32 " lost=%" PRIu32 " lostpct=%.2f "
-	       "late=%" PRIu16 " latepct=%.2f "
-	       "missdetect=%" PRIu16 " jumpdetect=%" PRIu16 " "
-	       "lastseq=%" PRIu16,
-	       rtpstat->ssrc,
-	       src_ip, rtpstat->src_port,
-	       dst_ip, rtpstat->dst_port,
-	       rtpstat->packets,
-	       rtpstat->misssize, /* lost */
-	       100.0 * rtpstat->misssize / rtpstat->packets,
-	       rtpstat->late,
-	       100.0 * rtpstat->late / rtpstat->packets,
-	       rtpstat->missed,
-	       rtpstat->jumps,
-	       rtpstat->seq);
+        sprintf(src_ip, "%hhu.%hhu.%hhu.%hhu",
+                rtpstat->src_ip >> 24, (rtpstat->src_ip >> 16) & 0xff,
+                (rtpstat->src_ip >> 8) & 0xff, rtpstat->src_ip & 0xff);
+        sprintf(dst_ip, "%hhu.%hhu.%hhu.%hhu",
+                rtpstat->dst_ip >> 24, (rtpstat->dst_ip >> 16) & 0xff,
+                (rtpstat->dst_ip >> 8) & 0xff, rtpstat->dst_ip & 0xff);
+        syslog(LOG_NOTICE,
+               "stream=%" PRIu32 " from=%s:%hu to=%s:%hu "
+               "packets=%" PRIu32 " lost=%" PRIu32 " lostpct=%.2f "
+               "late=%" PRIu16 " latepct=%.2f "
+               "missdetect=%" PRIu16 " jumpdetect=%" PRIu16 " "
+               "lastseq=%" PRIu16,
+               rtpstat->ssrc,
+               src_ip, rtpstat->src_port,
+               dst_ip, rtpstat->dst_port,
+               rtpstat->packets,
+               rtpstat->misssize, /* lost */
+               100.0 * rtpstat->misssize / rtpstat->packets,
+               rtpstat->late,
+               100.0 * rtpstat->late / rtpstat->packets,
+               rtpstat->missed,
+               rtpstat->jumps,
+               rtpstat->seq);
     }
 
     if (!packets) {
-	syslog(LOG_NOTICE, "streams=0 packets=0 lost=0 lostpct=0 late=0 latepct=0");
+        syslog(LOG_NOTICE, "streams=0 packets=0 lost=0 lostpct=0 late=0 latepct=0");
     } else {
-	syslog(LOG_NOTICE, "streams=%u packets=%u lost=%u lostpct=%.2f late=%u latepct=%.2f",
-	       streams, packets, lost, 100.0 * lost / packets,
-	       late, 100.0 * late / packets);
+        syslog(LOG_NOTICE, "streams=%u packets=%u lost=%u lostpct=%.2f late=%u latepct=%.2f",
+               streams, packets, lost, 100.0 * lost / packets,
+               late, 100.0 * late / packets);
     }
 }

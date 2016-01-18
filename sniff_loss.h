@@ -1,6 +1,6 @@
 #ifndef INCLUDED_SNIFF_LOSS_H
 #define INCLUDED_SNIFF_LOSS_H
-/* vim: set ts=8 sw=4 sts=4 noet: */
+/* vim: set ts=8 sw=4 sts=4 et: */
 /*======================================================================
 Copyright (C) 2015 OSSO B.V. <walter+rtpsniff@osso.nl>
 This file is part of RTPSniff.

@@ -1,6 +1,6 @@
 #ifndef INCLUDED_RTPSNIFF_H
 #define INCLUDED_RTPSNIFF_H
-/* vim: set ts=8 sw=4 sts=4 noet: */
+/* vim: set ts=8 sw=4 sts=4 et: */
 /*======================================================================
 Copyright (C) 2008,2009,2014,2015 OSSO B.V. <walter+rtpsniff@osso.nl>
 This file is part of RTPSniff.
@@ -44,7 +44,7 @@ struct memory_t {
     /* After a signal, a switch is requested. */
     volatile int request_switch;
 };
-    
+
 
 /*----------------------------------------------------------------------------*
  | Module: anysniff                                                           |

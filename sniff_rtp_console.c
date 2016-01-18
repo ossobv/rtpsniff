@@ -1,4 +1,4 @@
-/* vim: set ts=8 sw=4 sts=4 noet: */
+/* vim: set ts=8 sw=4 sts=4 et: */
 /*======================================================================
 Copyright (C) 2008,2009,2014,2015 OSSO B.V. <walter+rtpsniff@osso.nl>
 This file is part of RTPSniff.
@@ -25,11 +25,11 @@ with RTPSniff.  If not, see <http://www.gnu.org/licenses/>.
 
 void out_help() {
     printf(
-	"/*********************"
-	" module: out (console) **********************************/\n"
-	"This is the console output module.\n"
-	"FIXME: define what it does...\n"
-	"\n"
+        "/*********************"
+        " module: out (console) **********************************/\n"
+        "This is the console output module.\n"
+        "FIXME: define what it does...\n"
+        "\n"
     );
 }
 
@@ -52,56 +52,56 @@ void out_write(uint32_t unixtime_begin, uint32_t interval, void *data) {
     struct rtpstat_t *rtpstat, *tmp;
 
     printf("Storage output: unixtime_begin=%" SCNu32 ", interval=%" SCNu32 ", memory=%p\n",
-	    unixtime_begin, interval, memory);
+            unixtime_begin, interval, memory);
 
     HASH_ITER(hh, memory, rtpstat, tmp) {
-	streams += 1;
-	packets += rtpstat->packets;
-	lost += rtpstat->misssize;
-	late += rtpstat->late;
+        streams += 1;
+        packets += rtpstat->packets;
+        lost += rtpstat->misssize;
+        late += rtpstat->late;
 
-	/* Streams with significant amounts of packets */
-	if (rtpstat->packets < 20)
-	    continue;
-	/* Streams with issues */
-	if (rtpstat->missed == 0 && rtpstat->late == 0 && rtpstat->jumps == 0)
-	    continue;
-	/* Packets lost minimum 5% */
-	if (rtpstat->misssize * 100 / rtpstat->packets < 5)
-	    continue;
+        /* Streams with significant amounts of packets */
+        if (rtpstat->packets < 20)
+            continue;
+        /* Streams with issues */
+        if (rtpstat->missed == 0 && rtpstat->late == 0 && rtpstat->jumps == 0)
+            continue;
+        /* Packets lost minimum 5% */
+        if (rtpstat->misssize * 100 / rtpstat->packets < 5)
+            continue;
 
-	sprintf(src_ip, "%hhu.%hhu.%hhu.%hhu",
-		rtpstat->src_ip >> 24, (rtpstat->src_ip >> 16) & 0xff,
-		(rtpstat->src_ip >> 8) & 0xff, rtpstat->src_ip & 0xff);
-	sprintf(dst_ip, "%hhu.%hhu.%hhu.%hhu",
-		rtpstat->dst_ip >> 24, (rtpstat->dst_ip >> 16) & 0xff,
-		(rtpstat->dst_ip >> 8) & 0xff, rtpstat->dst_ip & 0xff);
-	printf("RTP: %s:%hu > %s:%hu"
-		", ssrc: %" PRIu32
-		", packets: %" PRIu32
-		", seq: %" PRIu16
-		", missed: %" PRIu16
-		", misssize: %" PRIu16
-		", late: %" PRIu16
-		", jump: %" PRIu16
-		"\n",
-		src_ip, rtpstat->src_port,
-		dst_ip, rtpstat->dst_port,
-		rtpstat->ssrc,
-		rtpstat->packets,
-		rtpstat->seq,
-		rtpstat->missed,
-		rtpstat->misssize,
-		rtpstat->late,
-		rtpstat->jumps);
+        sprintf(src_ip, "%hhu.%hhu.%hhu.%hhu",
+                rtpstat->src_ip >> 24, (rtpstat->src_ip >> 16) & 0xff,
+                (rtpstat->src_ip >> 8) & 0xff, rtpstat->src_ip & 0xff);
+        sprintf(dst_ip, "%hhu.%hhu.%hhu.%hhu",
+                rtpstat->dst_ip >> 24, (rtpstat->dst_ip >> 16) & 0xff,
+                (rtpstat->dst_ip >> 8) & 0xff, rtpstat->dst_ip & 0xff);
+        printf("RTP: %s:%hu > %s:%hu"
+                ", ssrc: %" PRIu32
+                ", packets: %" PRIu32
+                ", seq: %" PRIu16
+                ", missed: %" PRIu16
+                ", misssize: %" PRIu16
+                ", late: %" PRIu16
+                ", jump: %" PRIu16
+                "\n",
+                src_ip, rtpstat->src_port,
+                dst_ip, rtpstat->dst_port,
+                rtpstat->ssrc,
+                rtpstat->packets,
+                rtpstat->seq,
+                rtpstat->missed,
+                rtpstat->misssize,
+                rtpstat->late,
+                rtpstat->jumps);
     }
 
     if (!packets) {
-	printf("RTP-SUM: nothing\n");
+        printf("RTP-SUM: nothing\n");
     } else {
-	printf("RTP-SUM: streams %u, packets %u, lost %u (%.2f%%), late %u (%.2f%%)\n",
-	       streams, packets, lost, 100.0 * lost / packets,
-	       late, 100.0 * late / packets);
+        printf("RTP-SUM: streams %u, packets %u, lost %u (%.2f%%), late %u (%.2f%%)\n",
+               streams, packets, lost, 100.0 * lost / packets,
+               late, 100.0 * late / packets);
     }
     fflush(stdout);
 }

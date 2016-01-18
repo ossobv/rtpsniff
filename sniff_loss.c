@@ -1,4 +1,4 @@
-/* vim: set ts=8 sw=4 sts=4 noet: */
+/* vim: set ts=8 sw=4 sts=4 et: */
 /*======================================================================
 Copyright (C) 2008,2009,2014,2015 OSSO B.V. <walter+rtpsniff@osso.nl>
 This file is part of RTPSniff.
@@ -35,15 +35,15 @@ static void sniff__loop_done(int signum);
 
 void sniff_help() {
     printf(
-	"/*********************"
-	" module: sniff (pcap+rtp) *******************************/\n"
-	"Sniff uses libpcap to listen for all incoming and outgoing RTP packets.\n"
-	"\n"
+        "/*********************"
+        " module: sniff (pcap+rtp) *******************************/\n"
+        "Sniff uses libpcap to listen for all incoming and outgoing RTP packets.\n"
+        "\n"
     );
 }
 
 static void sniff_got_packet(u_char *args, const struct pcap_pkthdr *header,
-		        const u_char *packet) {
+                             const u_char *packet) {
     time_t sec = header->ts.tv_sec;
     long int usec = header->ts.tv_usec;
     int recently_active = sniff__memory->active;
@@ -54,11 +54,11 @@ static void sniff_got_packet(u_char *args, const struct pcap_pkthdr *header,
 
     /* Auto-alloc stuff here */
     if (!curmem) {
-	curmem = calloc(1, sizeof(struct lossstat_t));
-	if (!curmem)
-	    abort();
-	sniff__memory->data[recently_active] = curmem;
-	curmem->min_diff_usec = (uint64_t)-1;
+        curmem = calloc(1, sizeof(struct lossstat_t));
+        if (!curmem)
+            abort();
+        sniff__memory->data[recently_active] = curmem;
+        curmem->min_diff_usec = (uint64_t)-1;
     }
 
     /* Keep statistics */
@@ -66,12 +66,12 @@ static void sniff_got_packet(u_char *args, const struct pcap_pkthdr *header,
         off = now - curmem->prev;
         if (off >= 0) {
             if (off < curmem->min_diff_usec)
-		curmem->min_diff_usec = off;
-	    if (off > curmem->max_diff_usec)
-		curmem->max_diff_usec = off;
-	} else {
-	    /* Got packets out of order! Ignoring timestamp! */
-	    curmem->out_of_order += 1;
+                curmem->min_diff_usec = off;
+            if (off > curmem->max_diff_usec)
+                curmem->max_diff_usec = off;
+        } else {
+            /* Got packets out of order! Ignoring timestamp! */
+            curmem->out_of_order += 1;
         }
     }
 
@@ -99,7 +99,7 @@ void sniff_loop(pcap_t *handle, struct memory_t *memory) {
 
 #ifndef NDEBUG
     fprintf(stderr, "sniff_loop: Starting loop (mem %p/%p/%i).\n",
-	    memory->data[0], memory->data[1], memory->active);
+            memory->data[0], memory->data[1], memory->active);
 #endif
 
     /* This uses the fast PACKET_RX_RING if available. */
@@ -134,8 +134,8 @@ static void sniff__switch_memory(int signum) {
     sniff__memory->active = !recently_active;
 #ifndef NDEBUG
     fprintf(stderr, "sniff__switch_memory: Switched from memory %d (%p) to %d (%p).\n",
-	    recently_active, sniff__memory->data[recently_active],
-	    !recently_active, sniff__memory->data[!recently_active]);
+            recently_active, sniff__memory->data[recently_active],
+            !recently_active, sniff__memory->data[!recently_active]);
 #endif
 }
 
