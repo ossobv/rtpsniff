@@ -101,9 +101,9 @@ void sniff_release(struct rtpstat_t **memory);
 /*----------------------------------------------------------------------------*
  | Module: storage                                                            |
  |                                                                            |
- | Stores the packet/byte count averages. You must call `out_open` and    |
- | `out_close` while single-threaded. A config file name must be passed   |
- | to `out_open` that can be used to read settings like (1) which IP      |
+ | Stores the packet/byte count averages. You must call `out_open` and        |
+ | `out_close` while single-threaded. A config file name must be passed       |
+ | to `out_open` that can be used to read settings like (1) which IP          |
  | addresses to store/ignore or (2) to which database to connect.             |
  |                                                                            |
  | Calls: (nothing)                                                           |
@@ -119,9 +119,9 @@ void out_write(uint32_t unixtime_begin, uint32_t interval, struct rtpstat_t *rtp
  |                                                                            |
  | Runs a thread that wakes up every interval. When waking up, it raises      |
  | SIGUSR1 to signal `sniff_loop` to begin writing to a different buffer so   |
- | it can safely give the current buffer to `out_write` for processing.   |
+ | it can safely give the current buffer to `out_write` for processing.       |
  |                                                                            |
- | Calls: `out_write` (from a thread)                                     |
+ | Calls: `out_write` (from a thread)                                         |
  *----------------------------------------------------------------------------*/
 void timer_help();
 int timer_loop_bg(struct memory_t *memory);
