@@ -33,7 +33,7 @@ variables:
 	@if test -z "$(MOD_OUT)"; then \
 	    echo 'Please select output module through MOD_OUT:' >&2; \
 	    echo '  make MOD_OUT=console  # for console output' >&2; \
-	    echo '  make MOD_OUT=syslog   # for syslog output' >&2; \
+	    echo '  #make MOD_OUT=syslog  # for syslog output' >&2; \
 	    false; fi
 
 rtpsniff: variables
