@@ -48,7 +48,7 @@ struct memory_t {
     /* After a signal, a switch is requested. */
     volatile int request_switch;
 };
-    
+
 struct rtpstat_t {
     /* Part of hash */
     uint32_t src_ip;
@@ -71,7 +71,7 @@ struct rtpstat_t {
 
 #define HASH_FIRST src_ip
 #define HASH_SIZE(rtpstat) ((char*)&((rtpstat).packets) - (char*)&((rtpstat).HASH_FIRST))
-    
+
 
 /*----------------------------------------------------------------------------*
  | Module: rtpsniff                                                           |
