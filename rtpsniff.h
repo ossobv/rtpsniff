@@ -1,6 +1,6 @@
 #ifndef INCLUDED_RTPSNIFF_H
 #define INCLUDED_RTPSNIFF_H
-/* vim: set ts=8 sw=4 sts=4 noet: */
+/* vim: set ts=8 sw=4 sts=4 et: */
 /*======================================================================
 Copyright (C) 2008,2009,2014 OSSO B.V. <walter+rtpsniff@osso.nl>
 This file is part of RTPSniff.
@@ -34,7 +34,7 @@ with RTPSniff.  If not, see <http://www.gnu.org/licenses/>.
  |                                                                            |
  | The `*_help` functions provide implementation specific information.        |
  | Everything is assumed to be single-threaded and non-reentrant, except for  |
- | the timer that uses a thread to call `out_write` at a specified        |
+ | the timer that uses a thread to call `out_write` at a specified            |
  | interval.                                                                  |
  *----------------------------------------------------------------------------*/
 
@@ -61,10 +61,10 @@ struct rtpstat_t {
     uint32_t packets;
     /*uint32_t timestamp? */
     uint16_t seq;
-    uint16_t missed;	/* +1 for every missed increment */
-    uint16_t misssize;	/* +N for every missed N increments */
-    uint16_t late;	/* +1 for every out-of-order sequence */
-    uint16_t jumps;	/* +1 for every large jump */
+    uint16_t missed;        /* +1 for every missed increment */
+    uint16_t misssize;      /* +N for every missed N increments */
+    uint16_t late;          /* +1 for every out-of-order sequence */
+    uint16_t jumps;         /* +1 for every large jump */
 
     UT_hash_handle hh;
 };

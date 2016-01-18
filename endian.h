@@ -1,6 +1,6 @@
 #ifndef INCLUDED_ENDIAN_H
 #define INCLUDED_ENDIAN_H
-/* vim: set ts=8 sts=4 sw=4 tw=80 noet: */
+/* vim: set ts=8 sts=4 sw=4 tw=80 et: */
 /*======================================================================
 Copyright (C) 2004,2005,2009,2012,2013 Walter Doekes
   <walter+tthsum@wjd.nu>
@@ -28,13 +28,13 @@ along with tthsum.  If not, see <http://www.gnu.org/licenses/>.
 #if defined(__linux) || defined(__GLIBC__)
 #   include <endian.h>
 #   ifndef BIG_ENDIAN
-#	define BIG_ENDIAN __BIG_ENDIAN
+#       define BIG_ENDIAN __BIG_ENDIAN
 #   endif
 #   ifndef LITTLE_ENDIAN
-#	define LITTLE_ENDIAN __LITTLE_ENDIAN
+#       define LITTLE_ENDIAN __LITTLE_ENDIAN
 #   endif
 #   ifndef BYTE_ORDER
-#	define BYTE_ORDER __BYTE_ORDER
+#       define BYTE_ORDER __BYTE_ORDER
 #   endif
 #elif defined(__FreeBSD__) || defined (__NetBSD__) || defined(__OpenBSD__)
     /* sys/types.h includes machine/endian.h */
@@ -45,18 +45,18 @@ along with tthsum.  If not, see <http://www.gnu.org/licenses/>.
 
 /* Test the values and try to set them by hand on failure */
 #if LITTLE_ENDIAN == BIG_ENDIAN \
-	    || (BYTE_ORDER != LITTLE_ENDIAN && BYTE_ORDER != BIG_ENDIAN) \
-	    || !defined(BIG_ENDIAN) || !defined(LITTLE_ENDIAN)
+            || (BYTE_ORDER != LITTLE_ENDIAN && BYTE_ORDER != BIG_ENDIAN) \
+            || !defined(BIG_ENDIAN) || !defined(LITTLE_ENDIAN)
 #   undef BYTE_ORDER
 #   undef BIG_ENDIAN
 #   undef LITTLE_ENDIAN
 #   define BIG_ENDIAN 4321
 #   define LITTLE_ENDIAN 1234
 #   if defined(__alpha) || defined(__i386__) || defined(__vax__) \
-	    || defined(_WIN32)
-#	define BYTE_ORDER LITTLE_ENDIAN
+            || defined(_WIN32)
+#       define BYTE_ORDER LITTLE_ENDIAN
 #   else
-#	define BYTE_ORDER BIG_ENDIAN
+#       define BYTE_ORDER BIG_ENDIAN
 #   endif
 #endif
 

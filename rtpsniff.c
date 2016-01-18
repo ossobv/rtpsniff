@@ -1,4 +1,4 @@
-/* vim: set ts=8 sw=4 sts=4 noet: */
+/* vim: set ts=8 sw=4 sts=4 et: */
 /*======================================================================
 Copyright (C) 2008,2009,2014 OSSO B.V. <walter+rtpsniff@osso.nl>
 This file is part of RTPSniff.

@@ -1,4 +1,4 @@
-/* vim: set ts=8 sw=4 sts=4 noet: */
+/* vim: set ts=8 sw=4 sts=4 et: */
 /*======================================================================
 Copyright (C) 2008,2009,2014 OSSO B.V. <walter+rtpsniff@osso.nl>
 This file is part of RTPSniff.
@@ -40,7 +40,7 @@ static sighandler_t util__sighandlers[_NSIG];
 void util__signal_helper(int signum) {
     util__sighandlers[signum](signum);
     if (signal(signum, util__signal_helper) == SIG_ERR)
-	perror("signal");
+        perror("signal");
 }
 #endif /* !(__USE_POSIX || __USE_BSD) */
 
@@ -52,20 +52,20 @@ int util_signal_set(int signum, void (*handler)(int)) {
     sigemptyset(&action.sa_mask);
     action.sa_flags = 0;
     if ((ret = sigaction(signum, &action, NULL)) != 0) {
-	perror("sigaction");
-	return -1;
+        perror("sigaction");
+        return -1;
     }
 #else
 # ifndef __USE_BSD
     if (handler != SIG_IGN && handler != SIG_DFL) {
-	assert(signum < _NSIG);
-	util__sighandlers[signum] = handler;
-	handler = &util__signal_helper;
+        assert(signum < _NSIG);
+        util__sighandlers[signum] = handler;
+        handler = &util__signal_helper;
     }
 # endif /* !__USE_BSD */
     if (signal(signum, handler) == SIG_ERR) {
-	perror("signal");
-	return -1;
+        perror("signal");
+        return -1;
     }
 #endif /* !__USE_POSIX && !__USE_BSD */
     return 0;
@@ -77,7 +77,7 @@ int usleep(unsigned usec) {
     timeout.tv_sec = usec / 1000000;
     timeout.tv_usec = usec;
     if (select(0, NULL, NULL, NULL, &timeout) == 0)
-	return 0;
+        return 0;
     return -1;
 }
 #endif /* !(_BSD_SOURCE || _XOPEN_SOURCE >= 500) */
