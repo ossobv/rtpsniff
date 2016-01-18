@@ -30,6 +30,7 @@ const char *argv0;
 
 int main(int argc, char const *const *argv) {
     char errbuf[PCAP_ERRBUF_SIZE];
+    const char *error = &errbuf[0];
     struct bpf_program fp;
     pcap_t *handle = NULL;
     int bufsize;
@@ -58,7 +59,7 @@ int main(int argc, char const *const *argv) {
 
     /* Try initialization */
     errbuf[0] = '\0';
-    strncat(errbuf, "Not enough arguments", PCAP_ERRBUF_SIZE - 1);
+    strncat(errbuf, "not the required 3 arguments", PCAP_ERRBUF_SIZE - 1);
     if (argc != 4 ||
             ((handle = pcap_create(argv[1], errbuf)) == NULL) ||
             (pcap_set_snaplen(handle, sniff_snaplen()) != 0) ||
@@ -73,11 +74,13 @@ int main(int argc, char const *const *argv) {
             (pcap_activate(handle) != 0) ||
             (pcap_compile(handle, &fp, argv[3], 0, PCAP_NETMASK_UNKNOWN) == -1) ||
             (pcap_setfilter(handle, &fp) == -1)) {
+        if (handle)
+            error = pcap_geterr(handle);
         fprintf(stderr, "%s: Initialization failed or bad command line "
-                        "options. See -h for help:\n%s\n", argv0, errbuf);
+                        "options: %s\nSee %s -h for help.\n", argv0, error, argv0);
         if (handle)
             pcap_close(handle);
-        return 0;
+        return 1;
     }
 
 #ifndef NDEBUG
