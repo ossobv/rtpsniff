@@ -6,6 +6,13 @@ RTPSniff is a tool to sniff RTP traffic and show stats about it.
 (I'm considering renaming `rtpsniff` to `rtpstat` -- like `vmstat` --
 since it prints a status update every N seconds.)
 
+Building Debian package
+-----------------------
+
+Debian packages can be build using the provided Dockerfile.
+
+    docker build . -t rtpsniff
+    docker run --rm --volume `pwd`/build:/build rtpsniff
 
 TODO
 ----

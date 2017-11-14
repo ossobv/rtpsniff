@@ -1,0 +1,7 @@
+Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: rtpsniff
+Source: <https://github.com/ossobv/rtpsniff>
+
+Files: *
+Copyright: 2008,2009,2014 OSSO B.V. <wjdoekes+rtpsniff@osso.nl>
+License: GPL-3.0

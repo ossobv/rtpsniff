@@ -1,0 +1,13 @@
+Source: rtpsniff
+Section: net
+Priority: optional
+Maintainer: OSSO B.V. <wjdoekes+rtpsniff@osso.nl>
+Build-Depends: debhelper (>= 9), dh-systemd, libpcap0.8-dev
+Standards-Version: 3.9.5
+Homepage: https://github.com/ossobv/rtpsniff
+
+Package: rtpsniff
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Standalone RTP sniffing tool.
+ RTPSniff is a tool to sniff RTP traffic and show stats about it.
