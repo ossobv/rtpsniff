@@ -53,17 +53,17 @@ void out_write(uint32_t unixtime_begin, uint32_t interval, struct rtpstat_t *mem
     HASH_ITER(hh, memory, rtpstat, tmp) {
         streams += 1;
         packets += rtpstat->packets;
-        lost += rtpstat->misssize;
+        lost += rtpstat->missed;
         late += rtpstat->late;
 
         /* Streams with significant amounts of packets */
-        if (rtpstat->packets < 20)
+        if ((rtpstat->packets + rtpstat->missed) < 20)
             continue;
         /* Streams with issues */
-        if (rtpstat->missed == 0 && rtpstat->late == 0 && rtpstat->jumps == 0)
+        if (rtpstat->gaps == 0 && rtpstat->late == 0 && rtpstat->jumps == 0)
             continue;
         /* Packets lost minimum 5% */
-        if (rtpstat->misssize * 100 / rtpstat->packets < 5)
+        if (rtpstat->missed * 100 / (rtpstat->packets + rtpstat->missed) < 5)
             continue;
 
         sprintf(src_ip, "%hhu.%hhu.%hhu.%hhu",
@@ -75,18 +75,18 @@ void out_write(uint32_t unixtime_begin, uint32_t interval, struct rtpstat_t *mem
         syslog(LOG_NOTICE,
                "stream=%" PRIu32 " from=%s:%hu to=%s:%hu "
                "packets=%" PRIu32 " lost=%" PRIu32 " lostpct=%.2f "
-               "late=%" PRIu16 " latepct=%.2f "
+               "late_or_dupe=%" PRIu16 " latepct=%.2f "
                "missdetect=%" PRIu16 " jumpdetect=%" PRIu16 " "
                "lastseq=%" PRIu16,
                rtpstat->ssrc,
                src_ip, rtpstat->src_port,
                dst_ip, rtpstat->dst_port,
                rtpstat->packets,
-               rtpstat->misssize, /* lost */
-               100.0 * rtpstat->misssize / rtpstat->packets,
+               rtpstat->missed, /* lost */
+               100.0 * rtpstat->missed / (rtpstat->missed + rtpstat->packets),
                rtpstat->late,
-               100.0 * rtpstat->late / rtpstat->packets,
-               rtpstat->missed,
+               100.0 * rtpstat->late / (rtpstat->missed + rtpstat->packets),
+               rtpstat->gaps,
                rtpstat->jumps,
                rtpstat->seq);
     }
@@ -94,8 +94,8 @@ void out_write(uint32_t unixtime_begin, uint32_t interval, struct rtpstat_t *mem
     if (!packets) {
         syslog(LOG_NOTICE, "streams=0 packets=0 lost=0 lostpct=0 late=0 latepct=0");
     } else {
-        syslog(LOG_NOTICE, "streams=%u packets=%u lost=%u lostpct=%.2f late=%u latepct=%.2f",
-               streams, packets, lost, 100.0 * lost / packets,
-               late, 100.0 * late / packets);
+        syslog(LOG_NOTICE, "streams=%u not_lost=%u lost=%u lostpct=%.2f late_or_dupe=%u latepct=%.2f",
+               streams, packets, lost, 100.0 * lost / (packets + lost),
+               late, 100.0 * late / (lost + packets));
     }
 }

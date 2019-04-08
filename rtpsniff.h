@@ -58,11 +58,11 @@ struct rtpstat_t {
     uint32_t ssrc;
 
     /* Contents */
-    uint32_t packets;
+    uint32_t packets;       /* +1 for every packet seen */
     /*uint32_t timestamp? */
     uint16_t seq;
-    uint16_t missed;        /* +1 for every missed increment */
-    uint16_t misssize;      /* +N for every missed N increments */
+    uint16_t gaps;	    /* +1 for every increment gap */
+    uint16_t missed;        /* +N for every missed increment (probably lost) */
     uint16_t late;          /* +1 for every out-of-order sequence */
     uint16_t jumps;         /* +1 for every large jump */
 

@@ -184,19 +184,22 @@ static void sniff_got_packet(u_char *args, const struct pcap_pkthdr *header,
         } else {
             if (old->seq + 1 == seq) {
                 /* Excellent! */
+                old->seq = seq;
             } else {
                 int16_t diff = seq - old->seq;
                 if (diff < -15 || 15 < diff) {
                     old->jumps += 1;
+                    old->seq = seq;
                 } else if (diff > 0) {
-                    old->missed += 1;
-                    old->misssize += (diff - 1);
+                    old->gaps += 1;
+                    old->missed += (diff - 1);
+                    old->seq = seq;
                 } else {
                     old->late += 1;
+                    /* don't re-set seq here */
                 }
             }
             old->packets += 1;
-            old->seq = seq;
         }
 
         /* HASH_ADD may have mutated the pointer. */

@@ -50,12 +50,12 @@ TODO
   * Current output looks like this:
 
             RTP: 21x.17x.21x.18x:5014 > 19x.3x.11x.10x:17886, \
-              ssrc: 4022267390, packets: 43, seq: 47, missed: 5, \
-              misssize: 5, late: 0, jump: 0
+              ssrc: 4022267390, packets: 43, seq: 47, lost: 5, \
+              graps: 5, late: 0, jump: 0
             RTP: 19x.3x.11x.10x:14136 > 21x.17x.21x.18x:5012, \
-              ssrc: 4022267390, packets: 39, seq: 47, missed: 4, \
-              misssize: 4, late: 0, jump: 0
-            RTP-SUM: streams 1097, packets 214039, lost 69 (0.03%), \
+              ssrc: 4022267390, packets: 39, seq: 47, lost: 4, \
+              graps: 4, late: 0, jump: 0
+            RTP-SUM: streams 1097, not-lost 214039, lost 69 (0.03%), \
               late 140 (0.07%)
 
   * For starters, the individual streams should get a loss counter.
