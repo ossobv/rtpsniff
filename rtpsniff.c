@@ -100,7 +100,7 @@ void rtpsniff_help() {
         "  PCAP_FILTER is the common BPF filter (e.g. 'udp').\n"
         "\n"
         "Example:\n"
-        "  rtpsniff eth0 100 'udp and not port 53'\n"
+        "  rtpsniff eth0 'udp and not port 53'\n"
         "\n"
     );
 }

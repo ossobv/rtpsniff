@@ -61,7 +61,7 @@ struct rtpstat_t {
     uint32_t packets;       /* +1 for every packet seen */
     /*uint32_t timestamp? */
     uint16_t seq;
-    uint16_t gaps;	    /* +1 for every increment gap */
+    uint16_t gaps;          /* +1 for every increment gap */
     uint16_t missed;        /* +N for every missed increment (probably lost) */
     uint16_t late;          /* +1 for every out-of-order sequence */
     uint16_t jumps;         /* +1 for every large jump */
@@ -70,7 +70,8 @@ struct rtpstat_t {
 };
 
 #define HASH_FIRST src_ip
-#define HASH_SIZE(rtpstat) ((char*)&((rtpstat).packets) - (char*)&((rtpstat).HASH_FIRST))
+#define HASH_SIZE(rtpstat) \
+        ((char*)&((rtpstat).packets) - (char*)&((rtpstat).HASH_FIRST))
 
 
 /*----------------------------------------------------------------------------*
@@ -109,7 +110,8 @@ void sniff_release(struct rtpstat_t **memory);
 void out_help();
 int out_open();
 void out_close();
-void out_write(uint32_t unixtime_begin, uint32_t interval, struct rtpstat_t *rtphash);
+void out_write(uint32_t unixtime_begin, uint32_t interval,
+        struct rtpstat_t *rtphash);
 
 
 /*----------------------------------------------------------------------------*

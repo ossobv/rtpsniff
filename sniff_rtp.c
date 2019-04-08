@@ -49,7 +49,8 @@ struct sniff_ether {
     uint8_t dest[6];        /* destination host address */
     uint8_t source[6];      /* source host address */
     uint16_t type;          /* ETH_P_* type */
-    uint16_t pcp_cfi_vid;   /* 3bit prio, 1bit format indic, 12bit vlan (0=no, fff=reserved) */
+    uint16_t pcp_cfi_vid;   /* 3bit prio, 1bit format indicator, */
+                            /* 12bit vlan (0=no, fff=reserved) */
     uint16_t type2;         /* encapsulated type */
 };
 
@@ -115,13 +116,14 @@ void sniff_help() {
     printf(
         "/*********************"
         " module: sniff (pcap+rtp) *******************************/\n"
-        "Sniff uses libpcap to listen for all incoming and outgoing RTP packets.\n"
+        "Sniff uses libpcap to listen for all incoming and outgoing RTP"
+        " packets.\n"
         "\n"
     );
 }
 
 static void sniff_got_packet(u_char *args, const struct pcap_pkthdr *header,
-                        const u_char *packet) {
+        const u_char *packet) {
     struct sniff_ether *ether = (struct sniff_ether*)packet;
     struct sniff_ip *ip;
     struct sniff_udp *udp;

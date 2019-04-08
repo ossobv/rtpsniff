@@ -78,9 +78,9 @@ void out_write(uint32_t unixtime_begin, uint32_t interval, struct rtpstat_t *mem
     unsigned late = 0;
     unsigned gaps = 0;
     unsigned jumps = 0;
-    unsigned printed = 0;
+    unsigned printed;
 
-    struct rtpstat_t *rtpstat, *tmp;
+    struct rtpstat_t *class_c = NULL, *rtpstat, *tmp;
 
     /* Open temp file */
     if (out__filename) {
@@ -99,12 +99,15 @@ void out_write(uint32_t unixtime_begin, uint32_t interval, struct rtpstat_t *mem
                 unixtime_begin, interval, memory);
     }
 
-    /* Show per-stream summary */
+    /* Show per-stream summary; and find larger networks */
     /* "streams": ... */
+    printed = 0;
     for (fp = fps; *fp; ++fp)
         fprintf(*fp, ",\"streams\": [");
     HASH_ITER(hh, memory, rtpstat, tmp) {
         float miss_percent;
+
+        /* Calculate summary */
         streams += 1;
         packets += rtpstat->packets;
         lost += rtpstat->missed;
@@ -112,6 +115,35 @@ void out_write(uint32_t unixtime_begin, uint32_t interval, struct rtpstat_t *mem
         gaps += rtpstat->gaps;
         jumps += rtpstat->jumps;
 
+        /* Find class_c networks */
+        {
+            struct rtpstat_t find = {.src_ip = rtpstat->src_ip & 0xFFFFFF00};
+            struct rtpstat_t *old;
+            HASH_FIND(hh, class_c, &find.HASH_FIRST, HASH_SIZE(find), old);
+            if (!old) {
+                struct rtpstat_t *new = malloc(sizeof(*new));
+                if (new) {
+                    memcpy(new, &find, sizeof(*new));
+                    /* ignore: rtp->stamp, rtp->req */
+                    new->seq = 1; /* abuse "seq" for "streams" */
+                    new->packets = rtpstat->packets;
+                    new->missed = rtpstat->missed;
+                    new->late = rtpstat->late;
+                    new->gaps = rtpstat->gaps;
+                    new->jumps = rtpstat->jumps;
+                    HASH_ADD(hh, class_c, HASH_FIRST, HASH_SIZE(*new), new);
+                }
+            } else {
+                old->seq += 1;
+                old->packets += rtpstat->packets;
+                old->missed += rtpstat->missed;
+                old->late += rtpstat->late;
+                old->gaps += rtpstat->gaps;
+                old->jumps += rtpstat->jumps;
+            }
+        }
+
+//#if 0
         /* Streams with significant amounts of packets */
         if ((rtpstat->packets + rtpstat->missed) < 20)
             continue;
@@ -121,6 +153,7 @@ void out_write(uint32_t unixtime_begin, uint32_t interval, struct rtpstat_t *mem
         /* Packets lost minimum 5% */
         if (rtpstat->missed * 100 / (rtpstat->packets + rtpstat->missed) < 5)
             continue;
+//#endif
 
         sprintf(src_ip, "%hhu.%hhu.%hhu.%hhu",
                 rtpstat->src_ip >> 24, (rtpstat->src_ip >> 16) & 0xff,
@@ -163,7 +196,60 @@ void out_write(uint32_t unixtime_begin, uint32_t interval, struct rtpstat_t *mem
 
     /* Class C summary */
     /* "class_c": ... */
-    /* FIXME */
+    printed = 0;
+    for (fp = fps; *fp; ++fp)
+        fprintf(*fp, ",\"class_c\": [");
+    HASH_ITER(hh, class_c, rtpstat, tmp) {
+        float miss_percent;
+
+        /* Streams with significant amounts of packets */
+        if ((rtpstat->packets + rtpstat->missed) < 20)
+            continue;
+        /* Streams with issues */
+        if (rtpstat->gaps == 0 && rtpstat->late == 0 && rtpstat->jumps == 0)
+            continue;
+#if 0
+        /* Packets lost minimum 5% */
+        if (rtpstat->missed * 100 / (rtpstat->packets + rtpstat->missed) < 5)
+            continue;
+#endif
+
+        sprintf(src_ip, "%hhu.%hhu.%hhu.%hhu",
+                rtpstat->src_ip >> 24, (rtpstat->src_ip >> 16) & 0xff,
+                (rtpstat->src_ip >> 8) & 0xff, rtpstat->src_ip & 0xff);
+        miss_percent = (
+            100.0 * rtpstat->missed / (rtpstat->packets + rtpstat->missed));
+
+        for (fp = fps; *fp; ++fp) {
+            fprintf(
+                *fp,
+                "\n%c{\"from\": \"%s/24\""
+                ", \"streams\": %" PRIu16
+                ", \"not-lost\": %" PRIu32
+                ", \"lost\": %" PRIu16
+                ", \"lost-percent\": %.1f"
+                ", \"late-or-dupe\": %" PRIu16
+                ", \"gaps\": %" PRIu16
+                ", \"jumps\": %" PRIu16
+                "}",
+                (printed == 0 ? ' ' :  ','),
+                src_ip,
+                rtpstat->seq, /* abused "seq" */
+                rtpstat->packets,
+                rtpstat->missed,
+                miss_percent,
+                rtpstat->late,
+                rtpstat->gaps,
+                rtpstat->jumps);
+        }
+        ++printed;
+    }
+    for (fp = fps; *fp; ++fp)
+        fprintf(*fp, "]\n");
+    HASH_ITER(hh, class_c, rtpstat, tmp) {
+        HASH_DEL(class_c, rtpstat);
+        free(rtpstat);
+    }
 
     /* End output */
     for (fp = fps; *fp; ++fp) {
