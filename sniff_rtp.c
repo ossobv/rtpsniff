@@ -104,7 +104,7 @@ struct sniff_rtp {
 
 static struct memory_t *sniff__memory;
 static pcap_t *sniff__handle;
-
+static unsigned sniff__adjust_slowpoll_dropped;
 
 static void sniff__adjust_slowpoll_wait();
 static void sniff__switch_memory(int signum);
@@ -244,16 +244,14 @@ void sniff_loop(pcap_t *handle, struct memory_t *memory) {
     fprintf(stderr, "sniff_loop: Ended loop at user/system request.\n");
 #endif
 
+    /* Fetch grand total stats */
     if (pcap_stats(handle, &stat) < 0) {
             fprintf(stderr, "pcap_stats: %s\n", pcap_geterr(handle));
             return;
     }
-
-    // FIXME: move this to out_*
-    //fprintf(stderr, "%u packets captured\n", packets_captured);
-    // and how many minutes? produce a grand total?
     fprintf(stderr, "%u packets received by filter\n", stat.ps_recv);
-    fprintf(stderr, "%u packets dropped by kernel\n", stat.ps_drop);
+    fprintf(stderr, "%u packets dropped by kernel\n",
+            stat.ps_drop - sniff__adjust_slowpoll_dropped);
     fprintf(stderr, "%u packets dropped by interface\n", stat.ps_ifdrop);
 
     /* Remove signal handlers */
@@ -268,9 +266,11 @@ static void sniff__switch_memory(int signum) {
     int recently_active = sniff__memory->active;
     sniff__memory->active = !recently_active;
 #ifndef NDEBUG
-    fprintf(stderr, "sniff__switch_memory: Switched from memory %d (%p) to %d (%p).\n",
-            recently_active, sniff__memory->rtphash[recently_active],
-            !recently_active, sniff__memory->rtphash[!recently_active]);
+    fprintf(
+        stderr,
+        "sniff__switch_memory: Switched from memory %d (%p) to %d (%p).\n",
+        recently_active, sniff__memory->rtphash[recently_active],
+        !recently_active, sniff__memory->rtphash[!recently_active]);
 #endif
 
     /* Ajust wait time if needed */
@@ -291,18 +291,21 @@ void sniff_release(struct rtpstat_t **memory) {
 
 void sniff__adjust_slowpoll_wait() {
     struct pcap_stat stat;
-    static unsigned prev_drop;
+
     if (pcap_stats(sniff__handle, &stat) >= 0) {
-        if (stat.ps_drop > prev_drop) {
-            unsigned dropped = stat.ps_drop - prev_drop;
+        if (stat.ps_drop > sniff__adjust_slowpoll_dropped) {
+            unsigned dropped = stat.ps_drop - sniff__adjust_slowpoll_dropped;
             if (libslowpoll_wait > 500) {
+                /* Decrease slowpoll wait time */
                 libslowpoll_wait /= 2;
-                fprintf(stderr, "(dropped %u; reducing slowpoll_wait to %d)\n",
-                        dropped, libslowpoll_wait);
+                fprintf(stderr, "%u packets dropped by kernel: "
+                        "reducing slowpoll_wait to %d\n", dropped,
+                        libslowpoll_wait);
             } else {
-                fprintf(stderr, "(dropped %u; your system is too slow)\n", dropped);
+                fprintf(stderr, "%u packets dropped by kernel: "
+                        "your system is too slow\n", dropped);
             }
         }
-        prev_drop = stat.ps_drop;
+        sniff__adjust_slowpoll_dropped = stat.ps_drop;
     }
 }

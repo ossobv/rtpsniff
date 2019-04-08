@@ -76,6 +76,9 @@ void out_write(uint32_t unixtime_begin, uint32_t interval, struct rtpstat_t *mem
     unsigned packets = 0;
     unsigned lost = 0;
     unsigned late = 0;
+    unsigned gaps = 0;
+    unsigned jumps = 0;
+    unsigned printed = 0;
 
     struct rtpstat_t *rtpstat, *tmp;
 
@@ -86,18 +89,28 @@ void out_write(uint32_t unixtime_begin, uint32_t interval, struct rtpstat_t *mem
         }
     }
 
+    /* {"info": ... */
     for (fp = fps; *fp; ++fp) {
-        fprintf(*fp, "Storage output: unixtime_begin=%" SCNu32 ", "
-                "interval=%" SCNu32 ", memory=%p\n",
+        fprintf(
+            *fp,
+            "{\"info\": {\"mod\": \"out_rtpsniff\", "
+            "\"begin_time\": %" SCNu32 ", "
+            "\"interval\": %" SCNu32 ", \"memory\": \"%p\"}\n",
                 unixtime_begin, interval, memory);
     }
 
+    /* Show per-stream summary */
+    /* "streams": ... */
+    for (fp = fps; *fp; ++fp)
+        fprintf(*fp, ",\"streams\": [");
     HASH_ITER(hh, memory, rtpstat, tmp) {
         float miss_percent;
         streams += 1;
         packets += rtpstat->packets;
         lost += rtpstat->missed;
         late += rtpstat->late;
+        gaps += rtpstat->gaps;
+        jumps += rtpstat->jumps;
 
         /* Streams with significant amounts of packets */
         if ((rtpstat->packets + rtpstat->missed) < 20)
@@ -121,37 +134,54 @@ void out_write(uint32_t unixtime_begin, uint32_t interval, struct rtpstat_t *mem
         for (fp = fps; *fp; ++fp) {
             fprintf(
                 *fp,
-                "RTP: %s:%hu > %s:%hu"
-                ", ssrc: %" PRIu32
-                ", packets: %" PRIu32
-                ", seq: %" PRIu16
-                ", lost: %" PRIu16
-                ", lostpct: %.1f%%"
-                ", gaps: %" PRIu16
-                ", late-or-dupe: %" PRIu16
-                ", jump: %" PRIu16
-                "\n",
+                "\n%c{\"from\": \"%s:%hu\", \"to\": \"%s:%hu\""
+                ", \"ssrc\": %" PRIu32
+                ", \"seq\": %" PRIu16
+                ", \"not-lost\": %" PRIu32
+                ", \"lost\": %" PRIu16
+                ", \"lost-percent\": %.1f"
+                ", \"late-or-dupe\": %" PRIu16
+                ", \"gaps\": %" PRIu16
+                ", \"jumps\": %" PRIu16
+                "}",
+                (printed == 0 ? ' ' :  ','),
                 src_ip, rtpstat->src_port,
                 dst_ip, rtpstat->dst_port,
                 rtpstat->ssrc,
-                (rtpstat->packets + rtpstat->missed),
                 rtpstat->seq,
+                rtpstat->packets,
                 rtpstat->missed,
                 miss_percent,
-                rtpstat->gaps,
                 rtpstat->late,
+                rtpstat->gaps,
                 rtpstat->jumps);
         }
+        ++printed;
     }
+    for (fp = fps; *fp; ++fp)
+        fprintf(*fp, "]\n");
 
+    /* Class C summary */
+    /* "class_c": ... */
+    /* FIXME */
+
+    /* End output */
     for (fp = fps; *fp; ++fp) {
         if (!packets) {
-            fprintf(*fp, "RTP-SUM: nothing\n");
+            fprintf(*fp, ",\"summary\": null\n}\n");
         } else {
-            fprintf(*fp, "RTP-SUM: streams %u, not-lost %u, lost %u (%.2f%%), "
-                    "late-or-dupe %u (%.2f%%)\n",
-                    streams, packets, lost, 100.0 * lost / (lost + packets),
-                    late, 100.0 * late / (lost + packets));
+            fprintf(
+                *fp,
+                ",\"summary\": {"
+                "\"streams\": %u, "
+                "\"not-lost\": %u, "
+                "\"lost\": %u, "
+                "\"lost-percent\": %.2f, "
+                "\"late-or-dupe\": %u, "
+                "\"gaps\": %u, "
+                "\"jumps\": %u}\n}\n",
+                streams, packets, lost, 100.0 * lost / (lost + packets),
+                late, gaps, jumps);
         }
         fflush(*fp);
     }
