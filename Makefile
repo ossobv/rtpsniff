@@ -65,7 +65,7 @@ $(addprefix bin/.$(APPNAME)/, $(addsuffix .o, $(MODULES))): Makefile endian.h rt
 
 bin/libslowpoll.so: slowpoll.c
 	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) -D_GNU_SOURCE -fPIC -ldl -shared -o $@ $<
+	$(CC) $(CFLAGS) -D_GNU_SOURCE -fPIC -shared -o $@ $< -ldl
 
 bin/.$(APPNAME)/%.o: %.c
 	@mkdir -p $(dir $@)
