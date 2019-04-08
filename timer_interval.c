@@ -31,6 +31,10 @@ with RTPSniff.  If not, see <http://www.gnu.org/licenses/>.
 #   define INTERVAL_SECONDS 10 /* wake the storage engine every N seconds */
 #endif /* INTERVAL_SECONDS */
 
+#if INTERVAL_SECONDS < 2
+#   error INTERVAL_SECONDS be too low
+#endif
+
 #define TIMER__METHOD_NSLEEP 1
 #define TIMER__METHOD_SEMAPHORE 2
 #if !defined(USE_NSLEEP_TIMER) && (_POSIX_C_SOURCE >= 200112L || _XOPEN_SOURCE >= 600)
