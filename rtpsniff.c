@@ -66,6 +66,13 @@ int main(int argc, char const *const *argv) {
         exit(EXIT_FAILURE);
     }
 
+    /* Initialize output module */
+    if (out_open()) {
+        if (handle)
+            pcap_close(handle);
+        exit(EXIT_FAILURE);
+    }
+
     /* Initialize updater thread */
     timer_loop_bg(&memory);
 

@@ -102,14 +102,12 @@ void sniff_release(struct rtpstat_t **memory);
  | Module: storage                                                            |
  |                                                                            |
  | Stores the packet/byte count averages. You must call `out_open` and        |
- | `out_close` while single-threaded. A config file name must be passed       |
- | to `out_open` that can be used to read settings like (1) which IP          |
- | addresses to store/ignore or (2) to which database to connect.             |
+ | `out_close` while single-threaded.                                         |
  |                                                                            |
  | Calls: (nothing)                                                           |
  *----------------------------------------------------------------------------*/
 void out_help();
-int out_open(char const *config_file);
+int out_open();
 void out_close();
 void out_write(uint32_t unixtime_begin, uint32_t interval, struct rtpstat_t *rtphash);
 
