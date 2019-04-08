@@ -29,6 +29,9 @@ with RTPSniff.  If not, see <http://www.gnu.org/licenses/>.
 #include <unistd.h>
 #include <netpacket/packet.h> /* linux-specific: struct_ll and PF_PACKET */
 
+/* Global from libslowpoll */
+extern int libslowpoll_wait;
+
 /* Static constants (also found in linux/if_ether.h) */
 #if BYTE_ORDER == LITTLE_ENDIAN
 # define ETH_P_ALL 0x0300   /* all frames */
@@ -103,6 +106,7 @@ static struct memory_t *sniff__memory;
 static pcap_t *sniff__handle;
 
 
+static void sniff__adjust_slowpoll_wait();
 static void sniff__switch_memory(int signum);
 static void sniff__loop_done(int signum);
 
@@ -268,6 +272,9 @@ static void sniff__switch_memory(int signum) {
             recently_active, sniff__memory->rtphash[recently_active],
             !recently_active, sniff__memory->rtphash[!recently_active]);
 #endif
+
+    /* Ajust wait time if needed */
+    sniff__adjust_slowpoll_wait();
 }
 
 static void sniff__loop_done(int signum) {
@@ -279,5 +286,23 @@ void sniff_release(struct rtpstat_t **memory) {
     HASH_ITER(hh, *memory, rtpstat, tmp) {
         HASH_DEL(*memory, rtpstat);
         free(rtpstat);
+    }
+}
+
+void sniff__adjust_slowpoll_wait() {
+    struct pcap_stat stat;
+    static unsigned prev_drop;
+    if (pcap_stats(sniff__handle, &stat) >= 0) {
+        if (stat.ps_drop > prev_drop) {
+            unsigned dropped = stat.ps_drop - prev_drop;
+            if (libslowpoll_wait > 500) {
+                libslowpoll_wait /= 2;
+                fprintf(stderr, "(dropped %u; reducing slowpoll_wait to %d)\n",
+                        dropped, libslowpoll_wait);
+            } else {
+                fprintf(stderr, "(dropped %u; your system is too slow)\n", dropped);
+            }
+        }
+        prev_drop = stat.ps_drop;
     }
 }

@@ -26,7 +26,6 @@ TODO
     `vmstat`.
   * `-v` should make things verbose.
   * `-i` for the interface (take eth0 by default).
-  * `-B` for buffer size? or `-P` for packets per second?
   * `-b` for bpf filter? or `-p` for pcap-style filter?
     and default to udp and not 53? add example for filtering even
     ports only?
@@ -37,9 +36,6 @@ TODO
   it's within reasonable limits.
 
 * Output requirements are:
-  * Fix that all packets are counted, not just the seen ones, so a percentage
-    more accurately reflects loss.
-
   * Always show the total packets next to the percentage. Because only a
     percentage is misleading when there are only a few streams.
 

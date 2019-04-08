@@ -54,13 +54,16 @@ with RTPSniff.  If not, see <http://www.gnu.org/licenses/>.
 #include <unistd.h>
 
 
+int libslowpoll_wait;  /* a global.. feel free to import/change */
+
 static int (*real_poll)(struct pollfd *, nfds_t, int);
 
 __attribute__((constructor)) void init() {
     real_poll = dlsym(RTLD_NEXT, "poll");
+    libslowpoll_wait = 262144; /* 262ms == 0x40000us */
 }
 
 int poll(struct pollfd *fds, nfds_t nfds, int timeout) {
-    usleep(500000);
+    usleep(libslowpoll_wait);
     return real_poll(fds, nfds, timeout);
 }
