@@ -63,8 +63,8 @@ void out_write(uint32_t unixtime_begin, uint32_t interval, struct rtpstat_t *mem
         /* Streams with issues */
         if (rtpstat->gaps == 0 && rtpstat->late == 0 && rtpstat->jumps == 0)
             continue;
-        /* Packets lost minimum 1% */
-        if (rtpstat->missed * 100 / (rtpstat->packets + rtpstat->missed) < 1)
+        /* Packets lost minimum 5% */
+        if (rtpstat->missed * 100 / (rtpstat->packets + rtpstat->missed) < 5)
             continue;
 
         sprintf(src_ip, "%hhu.%hhu.%hhu.%hhu",
