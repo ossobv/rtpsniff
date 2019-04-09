@@ -1,0 +1,10 @@
+[Unit]
+After=network-online.target
+After=network.service
+After=pf_ring.service
+
+[Service]
+Type=simple
+Environment=OUT_STATUS=/run/rtpsniff/%i.udp-and-not-port-53.status
+ExecStartPre=/bin/mkdir -p /run/rtpsniff
+ExecStart=/usr/local/sbin/rtpsniff %i 'udp and not port 53'
